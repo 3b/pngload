@@ -12,7 +12,7 @@
        (defmethod parse (parse-data (node (eql ,(make-keyword name))) &key length)
          (let ((data (,constructor)))
            (with-slots ,slots data
-             (with-fast-input (@ (buffer-data parse-data :bytes length))
+             (with-fast-input (@ (buffer-data (buffer parse-data) :bytes length))
                (declare (ignorable @))
                ,@body))
            data)))))
@@ -142,7 +142,7 @@
 
 (defmethod parse (parse-data (node (eql :idat)) &key length)
   ;; TODO after metadata chunks
-  (seek parse-data length))
+  (seek (buffer parse-data) length))
 
 (define-chunk-data (iend) ())
 
