@@ -9,10 +9,10 @@
                    (:copier nil)
                    (:predicate nil))
          ,@slots)
-       (defmethod parse (png-data (node (eql ,(make-keyword name))) &key length)
+       (defmethod parse (parse-data (node (eql ,(make-keyword name))) &key length)
          (let ((data (,constructor)))
            (with-slots ,slots data
-             (with-fast-input (@ (buffer-data png-data :bytes length))
+             (with-fast-input (@ (buffer-data parse-data :bytes length))
                (declare (ignorable @))
                ,@body))
            data)))))
@@ -25,26 +25,27 @@
         colour-type (read-bytes 1 @)
         compression-method (read-bytes 1 @)
         filter-method (read-bytes 1 @)
-        interlace-method (read-bytes 1 @)))
+        interlace-method (read-bytes 1 @))
+  (setf (png-colour-type (data parse-data)) (colour-type-name colour-type)))
 
 (define-chunk-data (plte) (pallete-entries)
   (let* ((entry-count (/ length 3)))
-    (setf pallete-entries (make-array `(,entry-count 3) :element-type 'octet))
+    (setf pallete-entries (make-array `(,entry-count 3) :element-type 'octet)
+          (png-pallete-count (data parse-data)) (/ length 3))
     (dotimes (entry entry-count)
       (dotimes (sample 3)
         (setf (aref pallete-entries entry sample) (read-bytes 1 @))))))
 
 (define-chunk-data (bkgd) (greyscale red green blue pallete-index)
-  (let* ((ihdr (find-chunk png-data :ihdr)))
-    (case (colour-type->name ihdr)
-      ((:greyscale :greyscale-alpha)
-       (setf greyscale (read-bytes 2 @)))
-      ((:truecolour :truecolour-alpha)
-       (setf red (read-bytes 2 @)
-             green (read-bytes 2 @)
-             blue (read-bytes 2 @)))
-      (:indexed-colour
-       (read-bytes 1 @)))))
+  (case (png-colour-type (data parse-data))
+    ((:greyscale :greyscale-alpha)
+     (setf greyscale (read-bytes 2 @)))
+    ((:truecolour :truecolour-alpha)
+     (setf red (read-bytes 2 @)
+           green (read-bytes 2 @)
+           blue (read-bytes 2 @)))
+    (:indexed-colour
+     (read-bytes 1 @))))
 
 (define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x
                                          green-y blue-x blue-y)
@@ -61,8 +62,7 @@
   (setf image-gamma (read-bytes 4 @)))
 
 (define-chunk-data (hist) (frequencies)
-  (let* ((plte (find-chunk png-data :plte))
-         (frequency-count (/ (chunk-length plte) 3)))
+  (let ((frequency-count (png-pallete-count (data parse-data))))
     (setf frequencies (make-array frequency-count
                                   :element-type '(unsigned-byte 16)))
     (dotimes (i frequency-count)
@@ -74,22 +74,21 @@
         unit-specifier (read-bytes 1 @)))
 
 (define-chunk-data (sbit) (greyscale red green blue alpha)
-  (let* ((ihdr (find-chunk png-data :ihdr)))
-    (case (colour-type->name ihdr)
-      (:greyscale
-       (setf greyscale (read-bytes 1 @)))
-      ((:truecolour :indexed-colour)
-       (setf red (read-bytes 1 @)
-             green (read-bytes 1 @)
-             blue (read-bytes 1 @)))
-      (:greyscale-alpha
-       (setf greyscale (read-bytes 1 @)
-             alpha (read-bytes 1 @)))
-      (:truecolour-alpha
-       (setf red (read-bytes 1 @)
-             green (read-bytes 1 @)
-             blue (read-bytes 1 @)
-             alpha (read-bytes 1 @))))))
+  (case (png-colour-type (data parse-data))
+    (:greyscale
+     (setf greyscale (read-bytes 1 @)))
+    ((:truecolour :indexed-colour)
+     (setf red (read-bytes 1 @)
+           green (read-bytes 1 @)
+           blue (read-bytes 1 @)))
+    (:greyscale-alpha
+     (setf greyscale (read-bytes 1 @)
+           alpha (read-bytes 1 @)))
+    (:truecolour-alpha
+     (setf red (read-bytes 1 @)
+           green (read-bytes 1 @)
+           blue (read-bytes 1 @)
+           alpha (read-bytes 1 @)))))
 
 (define-chunk-data (time) (year month day hour minute second)
   (setf year (read-bytes 2 @)
@@ -130,24 +129,23 @@
     #++(make-entries rest-bytes sample-depth)))
 
 (define-chunk-data (trns) (grey red blue green alpha-values)
-  (let ((ihdr (find-chunk png-data :ihdr)))
-    (ecase (colour-type->name ihdr)
-      (:greyscale
-       (setf grey (read-bytes 2 @)))
-      (:truecolour
-       (setf red (read-bytes 2 @)
-             blue (read-bytes 2 @)
-             green (read-bytes 2 @)))
-      (:indexed-colour
-       ;; TODO indexed colour
-       ))))
+  (ecase (png-colour-type (data parse-data))
+    (:greyscale
+     (setf grey (read-bytes 2 @)))
+    (:truecolour
+     (setf red (read-bytes 2 @)
+           blue (read-bytes 2 @)
+           green (read-bytes 2 @)))
+    (:indexed-colour
+     ;; TODO indexed colour
+     )))
 
-(defmethod parse (png-data (node (eql :idat)) &key length)
+(defmethod parse (parse-data (node (eql :idat)) &key length)
   ;; TODO after metadata chunks
-  (seek png-data length))
+  (seek parse-data length))
 
 (define-chunk-data (iend) ())
 
-(defmethod parse (png-data (node (eql :unknown-chunk)) &key length)
+(defmethod parse (parse-data (node (eql :unknown-chunk)) &key length)
   ;; TODO signal condition
-  (seek png-data length))
+  (seek parse-data length))

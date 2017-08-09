@@ -9,10 +9,9 @@
 (defmethod parse (png-data (node (eql :datastream)) &key)
   (let ((node (make-instance 'datastream)))
     (with-slots (datastream) png-data
-      (with-slots (signature) node
-        (setf datastream node
-              signature (parse png-data :datastream/signature))
-        (parse png-data :datastream/chunks :tree node)))
+      (with-slots (signature chunks) node
+        (setf signature (parse png-data :datastream/signature)
+              chunks (parse png-data :datastream/chunks))))
     node))
 
 (defmethod parse (png-data (node (eql :datastream/signature)) &key)
@@ -21,12 +20,11 @@
         signature
         (error 'invalid-png-stream :png-data png-data))))
 
-(defmethod parse (png-data (node (eql :datastream/chunks)) &key tree)
+(defmethod parse (png-data (node (eql :datastream/chunks)) &key)
   (loop :with last-chunk-p
         :until last-chunk-p
         :for chunk = (parse png-data :chunk)
-        :for type = (chunk-type->name chunk)
+        :for type = (chunk-type-name (chunk-type chunk))
         :when (eq type :iend)
           :do (setf last-chunk-p t)
-        :do (push chunk (chunks tree))
-        :finally (nreversef (chunks tree))))
+        :collect chunk))

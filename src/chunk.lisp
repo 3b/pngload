@@ -8,10 +8,10 @@
 
 (defmethod print-object ((object chunk) stream)
   (print-unreadable-object (object stream :type t)
-    (format stream "~S" (chunk-type->name object))))
+    (format stream "~S" (chunk-type-name (chunk-type object)))))
 
-(defun chunk-type->name (chunk)
-  (case (chunk-type chunk)
+(defun chunk-type-name (chunk-type)
+  (case chunk-type
     (#x49484452 :ihdr)
     (#x504c5445 :plte)
     (#x49444154 :idat)
@@ -32,47 +32,20 @@
     (#x7a545874 :ztxt)
     (otherwise :unknown-chunk)))
 
-(defun chunk-name->type (name)
-  (ecase name
-    (:ihdr #x49484452)
-    (:plte #x504c5445)
-    (:idat #x49444154)
-    (:iend #x49454e44)
-    (:chrm #x6348524d)
-    (:gama #x67414d41)
-    (:iccp #x69434350)
-    (:sbit #x73424954)
-    (:srgb #x73524742)
-    (:bkgd #x624b4744)
-    (:hist #x68495354)
-    (:trns #x74524e53)
-    (:phys #x70485973)
-    (:splt #x73504c54)
-    (:time #x74494d45)
-    (:itxt #x69545874)
-    (:text #x74455874)
-    (:ztxt #x7a545874)))
-
-(defun colour-type->name (chunk)
-  (ecase (ihdr-colour-type (chunk-data chunk))
+(defun colour-type-name (colour-type)
+  (ecase colour-type
     (0 :greyscale)
     (2 :truecolour)
     (3 :indexed-colour)
     (4 :greyscale-alpha)
     (6 :truecolour-alpha)))
 
-(defun find-chunk (png-data chunk-name)
-  (find-if
-   (lambda (x) (eq x (chunk-name->type chunk-name)))
-   (chunks (datastream png-data))
-   :key #'chunk-type))
-
-(defmethod parse (png-data (node (eql :chunk)) &key)
-  (let ((@ (buffer png-data))
+(defmethod parse (parse-data (node (eql :chunk)) &key)
+  (let ((@ (buffer parse-data))
         (chunk (make-instance 'chunk)))
     (with-slots (length type data crc) chunk
       (setf length (read-bytes 4 @)
             type (read-bytes 4 @)
-            data (parse png-data (chunk-type->name chunk) :length length)
+            data (parse parse-data (chunk-type-name type) :length length)
             crc (read-bytes 4 @)))
     chunk))

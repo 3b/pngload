@@ -1,15 +1,22 @@
 (in-package :mediabox-png)
 
-(defclass png-data ()
+(defclass parse-data ()
   ((buffer :reader buffer
            :initarg :buffer)
-   (datastream :reader datastream)))
+   (data :reader data
+         :initform (make-png))
+   (parse-tree :reader parse-tree)))
+
+(defstruct png
+  colour-type
+  pallete-count)
 
 (defun read-png-stream (stream)
   (with-fast-input (buffer nil stream)
-    (let ((png-data (make-instance 'png-data :buffer buffer)))
-      (parse png-data :datastream)
-      png-data)))
+    (let ((parse-data (make-instance 'parse-data :buffer buffer)))
+      (with-slots (parse-tree) parse-data
+        (setf parse-tree (parse parse-data :datastream)))
+      parse-data)))
 
 (defun read-png-file (path)
   (with-open-file (in path :element-type 'octet)
