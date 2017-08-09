@@ -4,7 +4,7 @@
   (:use #:cl
         #:alexandria
         #:fast-io)
-  (:export #:read-file
-           #:read-datastream
+  (:export #:read-png-file
+           #:read-png-stream
            #:write-file
            #:write-datastream))

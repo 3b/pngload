@@ -1,10 +1,10 @@
 (in-package :mediabox-png)
 
 (define-condition png-error (error)
-  ((file :reader file
-         :initarg :file)))
+  ((png-data :reader png-data
+             :initarg :png-data)))
 
-(define-condition invalid-file (png-error) ()
+(define-condition invalid-png-stream (png-error) ()
   (:report (lambda (c s)
-             (format s "File does not contain a valid PNG datastream: ~A."
-                     (path (file c))))))
+             (format s "Stream does not contain a valid PNG datastream: ~A."
+                     (get-data-path (png-data c))))))

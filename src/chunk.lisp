@@ -61,18 +61,18 @@
     (4 :greyscale-alpha)
     (6 :truecolour-alpha)))
 
-(defun find-chunk (file chunk-name)
+(defun find-chunk (png-data chunk-name)
   (find-if
    (lambda (x) (eq x (chunk-name->type chunk-name)))
-   (chunks (datastream file))
+   (chunks (datastream png-data))
    :key #'chunk-type))
 
-(defmethod parse (file (node (eql :chunk)) &key)
-  (let ((@ (buffer file))
+(defmethod parse (png-data (node (eql :chunk)) &key)
+  (let ((@ (buffer png-data))
         (chunk (make-instance 'chunk)))
     (with-slots (length type data crc) chunk
-      (setf length (readu32-be @)
-            type (readu32-be @)
-            data (parse file (chunk-type->name chunk) :length length)
-            crc (readu32-be @)))
+      (setf length (read-bytes 4 @)
+            type (read-bytes 4 @)
+            data (parse png-data (chunk-type->name chunk) :length length)
+            crc (read-bytes 4 @)))
     chunk))

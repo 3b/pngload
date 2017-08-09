@@ -1,7 +1,16 @@
 (in-package :mediabox-png)
 
-(defun seek (file &optional offset (start :current))
-  (with-slots (stream) (buffer file)
+(defun get-stream (png-data)
+  (fast-io::input-buffer-stream (buffer png-data)))
+
+(defun get-data-path (png-data)
+  (let ((stream (get-stream png-data)))
+    (typecase stream
+      (file-stream (pathname stream))
+      (t :IN-MEMORY))))
+
+(defun seek (png-data &optional offset (start :current))
+  (with-slots (stream) (buffer png-data)
     (when offset
       (ecase start
         (:start (file-position stream offset))
@@ -16,7 +25,10 @@
   (let ((end (or (position 0 octets :test #'=) (length octets))))
     (babel:octets-to-string octets :end end :encoding encoding)))
 
-(defun read-octets (file &key (count 1))
-  (let ((octets (make-octet-vector count)))
-    (fast-read-sequence octets (buffer file) 0 count)
-    octets))
+(defmacro read-bytes (count buffer)
+  `(fast-io::read-unsigned-be ,count ,buffer))
+
+(defun buffer-data (png-data &key (bytes 1))
+  (let ((octet-vector (make-octet-vector bytes)))
+    (fast-read-sequence octet-vector (buffer png-data) 0 bytes)
+    octet-vector))

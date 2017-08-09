@@ -23,4 +23,4 @@
    (:file "chunk")
    (:file "chunk-data")
    (:file "datastream")
-   (:file "png-file")))
+   (:file "png")))
