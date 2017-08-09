@@ -147,5 +147,5 @@
 (define-chunk-data (iend) ())
 
 (defmethod parse (parse-data (node (eql :unknown-chunk)) &key length)
-  ;; TODO signal condition
-  (seek parse-data length))
+  (seek (buffer parse-data) length)
+  (warn 'unknown-chunk-detected :parse-data parse-data))
