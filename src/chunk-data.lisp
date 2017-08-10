@@ -80,6 +80,9 @@
            blue (read-integer @ :bytes 1)
            alpha (read-integer @ :bytes 1)))))
 
+(define-chunk-data (srgb) (rendering-intent)
+  (setf rendering-intent (read-octet @)))
+
 (define-chunk-data (bkgd) (greyscale red green blue palette-index)
   (case (png-colour-type (data parse-data))
     ((:greyscale :greyscale-alpha)
