@@ -37,9 +37,8 @@
       (dotimes (sample 3)
         (setf (aref palette-entries entry sample) (read-integer @ :bytes 1))))))
 
-(defmethod parse (parse-data (node (eql :idat)) &key length)
-  ;; TODO after metadata chunks
-  (seek (buffer parse-data) length))
+(define-chunk-data (idat) (data)
+  (setf data (read-bytes @ :count length)))
 
 (define-chunk-data (iend) ())
 
