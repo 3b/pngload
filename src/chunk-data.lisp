@@ -45,7 +45,7 @@
            green (read-bytes 2 @)
            blue (read-bytes 2 @)))
     (:indexed-colour
-     (read-bytes 1 @))))
+     (setf palette-index (read-bytes 1 @)))))
 
 (define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x
                                          green-y blue-x blue-y)
