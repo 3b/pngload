@@ -99,7 +99,7 @@
         second (read-bytes 1 @)))
 
 (define-chunk-data (text) (keyword text-string)
-  (let* ((octets (fast-io::input-buffer-vector @))
+  (let* ((octets (get-vector @))
          (split (position 0 octets)))
     (setf keyword (read-string (subseq octets 0 split))
           text-string (read-string (subseq octets (1+ split))))))
@@ -110,7 +110,7 @@
   )
 
 (define-chunk-data (ztxt) (keyword compression-method compressed-text-datastream)
-  (let* ((octets (fast-io::input-buffer-vector @))
+  (let* ((octets (get-vector @))
          (split (position 0 octets)))
     (setf keyword (read-string (subseq octets 0 split))
           compression-method (elt octets (1+ split))

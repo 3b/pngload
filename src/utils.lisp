@@ -1,10 +1,13 @@
 (in-package :mediabox-png)
 
-(defun get-stream (parse-data)
-  (fast-io::input-buffer-stream (buffer parse-data)))
+(defun get-stream (buffer)
+  (fast-io::input-buffer-stream buffer))
+
+(defun get-vector (buffer)
+  (fast-io::input-buffer-vector buffer))
 
 (defun get-data-path (parse-data)
-  (let ((stream (get-stream parse-data)))
+  (let ((stream (get-stream (buffer parse-data))))
     (typecase stream
       (file-stream (pathname stream))
       (t :IN-MEMORY))))
