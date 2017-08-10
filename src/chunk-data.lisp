@@ -37,16 +37,11 @@
       (dotimes (sample 3)
         (setf (aref palette-entries entry sample) (read-integer @ :bytes 1))))))
 
-(define-chunk-data (bkgd) (greyscale red green blue palette-index)
-  (case (png-colour-type (data parse-data))
-    ((:greyscale :greyscale-alpha)
-     (setf greyscale (read-integer @ :bytes 2)))
-    ((:truecolour :truecolour-alpha)
-     (setf red (read-integer @ :bytes 2)
-           green (read-integer @ :bytes 2)
-           blue (read-integer @ :bytes 2)))
-    (:indexed-colour
-     (setf palette-index (read-integer @ :bytes 1)))))
+(defmethod parse (parse-data (node (eql :idat)) &key length)
+  ;; TODO after metadata chunks
+  (seek (buffer parse-data) length))
+
+(define-chunk-data (iend) ())
 
 (define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x
                                          green-y blue-x blue-y)
@@ -62,17 +57,11 @@
 (define-chunk-data (gama) (image-gamma)
   (setf image-gamma (read-integer @ :bytes 4)))
 
-(define-chunk-data (hist) (frequencies)
-  (let ((frequency-count (png-palette-count (data parse-data))))
-    (setf frequencies (make-array frequency-count
-                                  :element-type '(unsigned-byte 16)))
-    (dotimes (i frequency-count)
-      (setf (aref frequencies i) (read-integer @ :bytes 2)))))
-
-(define-chunk-data (phys) (pixels-per-unit-x pixels-per-unit-y unit-specifier)
-  (setf pixels-per-unit-x (read-integer @ :bytes 4)
-        pixels-per-unit-y (read-integer @ :bytes 4)
-        unit-specifier (read-integer @ :bytes 1)))
+(define-chunk-data (iccp) (profile-name compression-method compressed-profile)
+  (setf profile-name (read-string @ :bytes 79 :nullp t)
+        compression-method (read-octet @)
+        compressed-profile (read-bytes @ :count (- length (buffer-position @))
+                                         :deflatep t)))
 
 (define-chunk-data (sbit) (greyscale red green blue alpha)
   (case (png-colour-type (data parse-data))
@@ -91,32 +80,41 @@
            blue (read-integer @ :bytes 1)
            alpha (read-integer @ :bytes 1)))))
 
-(define-chunk-data (time) (year month day hour minute second)
-  (setf year (read-integer @ :bytes 2)
-        month (read-integer @ :bytes 1)
-        day (read-integer @ :bytes 1)
-        hour (read-integer @ :bytes 1)
-        minute (read-integer @ :bytes 1)
-        second (read-integer @ :bytes 1)))
+(define-chunk-data (bkgd) (greyscale red green blue palette-index)
+  (case (png-colour-type (data parse-data))
+    ((:greyscale :greyscale-alpha)
+     (setf greyscale (read-integer @ :bytes 2)))
+    ((:truecolour :truecolour-alpha)
+     (setf red (read-integer @ :bytes 2)
+           green (read-integer @ :bytes 2)
+           blue (read-integer @ :bytes 2)))
+    (:indexed-colour
+     (setf palette-index (read-integer @ :bytes 1)))))
 
-(define-chunk-data (text) (keyword text-string)
-  (setf keyword (read-string @ :bytes 79 :nullp t)
-        text-string (read-string @)))
+(define-chunk-data (hist) (frequencies)
+  (let ((frequency-count (png-palette-count (data parse-data))))
+    (setf frequencies (make-array frequency-count
+                                  :element-type '(unsigned-byte 16)))
+    (dotimes (i frequency-count)
+      (setf (aref frequencies i) (read-integer @ :bytes 2)))))
 
-(define-chunk-data (itxt) (keyword compression-flag compression-method
-                                   language-tag translated-keyword text)
-  (setf keyword (read-string @ :bytes 79 :nullp t)
-        compression-flag (read-octet @)
-        compression-method (read-octet @)
-        language-tag (read-string @ :nullp t)
-        translated-keyword (read-string @ :nullp t :encoding :utf-8)
-        text (read-string @ :encoding :utf-8
-                            :deflatep (if (= compression-flag 1) t nil))))
+(define-chunk-data (trns) (grey red blue green alpha-values)
+  (ecase (png-colour-type (data parse-data))
+    (:greyscale
+     (setf grey (read-integer @ :bytes 2)))
+    (:truecolour
+     (setf red (read-integer @ :bytes 2)
+           blue (read-integer @ :bytes 2)
+           green (read-integer @ :bytes 2)))
+    (:indexed-colour
+     (setf alpha-values (make-array length :element-type 'octet))
+     (dotimes (i length)
+       (setf (aref alpha-values i) (read-integer @ :bytes 1))))))
 
-(define-chunk-data (ztxt) (keyword compression-method compressed-text-datastream)
-  (setf keyword (read-string @ :bytes 79 :nullp t)
-        compression-method (read-integer @ :bytes 1)
-        compressed-text-datastream (read-string @ :deflatep t)))
+(define-chunk-data (phys) (pixels-per-unit-x pixels-per-unit-y unit-specifier)
+  (setf pixels-per-unit-x (read-integer @ :bytes 4)
+        pixels-per-unit-y (read-integer @ :bytes 4)
+        unit-specifier (read-integer @ :bytes 1)))
 
 (define-chunk-data (splt) (palette-name sample-depth palette-entries)
   (setf palette-name (read-string @ :bytes 79 :nullp t)
@@ -133,34 +131,36 @@
       (setf (aref palette-entries entry 4)
             (read-integer @ :bytes 2)))))
 
-(define-chunk-data (trns) (grey red blue green alpha-values)
-  (ecase (png-colour-type (data parse-data))
-    (:greyscale
-     (setf grey (read-integer @ :bytes 2)))
-    (:truecolour
-     (setf red (read-integer @ :bytes 2)
-           blue (read-integer @ :bytes 2)
-           green (read-integer @ :bytes 2)))
-    (:indexed-colour
-     (setf alpha-values (make-array length :element-type 'octet))
-     (dotimes (i length)
-       (setf (aref alpha-values i) (read-integer @ :bytes 1))))))
+(define-chunk-data (time) (year month day hour minute second)
+  (setf year (read-integer @ :bytes 2)
+        month (read-integer @ :bytes 1)
+        day (read-integer @ :bytes 1)
+        hour (read-integer @ :bytes 1)
+        minute (read-integer @ :bytes 1)
+        second (read-integer @ :bytes 1)))
 
-(define-chunk-data (iccp) (profile-name compression-method compressed-profile)
-  (setf profile-name (read-string @ :bytes 79 :nullp t)
+(define-chunk-data (itxt) (keyword compression-flag compression-method
+                                   language-tag translated-keyword text)
+  (setf keyword (read-string @ :bytes 79 :nullp t)
+        compression-flag (read-octet @)
         compression-method (read-octet @)
-        compressed-profile (read-bytes @ :count (- length (buffer-position @))
-                                         :deflatep t)))
+        language-tag (read-string @ :nullp t)
+        translated-keyword (read-string @ :nullp t :encoding :utf-8)
+        text (read-string @ :encoding :utf-8
+                            :deflatep (if (= compression-flag 1) t nil))))
 
-(defmethod parse (parse-data (node (eql :idat)) &key length)
-  ;; TODO after metadata chunks
-  (seek (buffer parse-data) length))
+(define-chunk-data (text) (keyword text-string)
+  (setf keyword (read-string @ :bytes 79 :nullp t)
+        text-string (read-string @)))
+
+(define-chunk-data (ztxt) (keyword compression-method compressed-text-datastream)
+  (setf keyword (read-string @ :bytes 79 :nullp t)
+        compression-method (read-integer @ :bytes 1)
+        compressed-text-datastream (read-string @ :deflatep t)))
 
 (defmethod parse (parse-data (node (eql :exif)) &key length)
   (seek (buffer parse-data) length)
   (warn 'draft-chunk-detected :parse-data parse-data :chunk-type node))
-
-(define-chunk-data (iend) ())
 
 (defmethod parse (parse-data (node (eql :unknown-chunk)) &key length)
   (seek (buffer parse-data) length)
