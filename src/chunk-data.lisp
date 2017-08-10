@@ -28,15 +28,15 @@
         interlace-method (read-bytes 1 @))
   (setf (png-colour-type (data parse-data)) (colour-type-name colour-type)))
 
-(define-chunk-data (plte) (pallete-entries)
+(define-chunk-data (plte) (palette-entries)
   (let* ((entry-count (/ length 3)))
-    (setf pallete-entries (make-array `(,entry-count 3) :element-type 'octet)
-          (png-pallete-count (data parse-data)) (/ length 3))
+    (setf palette-entries (make-array `(,entry-count 3) :element-type 'octet)
+          (png-palette-count (data parse-data)) (/ length 3))
     (dotimes (entry entry-count)
       (dotimes (sample 3)
-        (setf (aref pallete-entries entry sample) (read-bytes 1 @))))))
+        (setf (aref palette-entries entry sample) (read-bytes 1 @))))))
 
-(define-chunk-data (bkgd) (greyscale red green blue pallete-index)
+(define-chunk-data (bkgd) (greyscale red green blue palette-index)
   (case (png-colour-type (data parse-data))
     ((:greyscale :greyscale-alpha)
      (setf greyscale (read-bytes 2 @)))
@@ -62,7 +62,7 @@
   (setf image-gamma (read-bytes 4 @)))
 
 (define-chunk-data (hist) (frequencies)
-  (let ((frequency-count (png-pallete-count (data parse-data))))
+  (let ((frequency-count (png-palette-count (data parse-data))))
     (setf frequencies (make-array frequency-count
                                   :element-type '(unsigned-byte 16)))
     (dotimes (i frequency-count)
