@@ -38,16 +38,16 @@
 
 (define-chunk-data (idat) (data)
   (setf data (read-bytes @ :count length))
-  (push data (png-compressed-data (png-data png))))
+  (push data (png-image-data (data parse-data))))
 
 (define-chunk-data (iend) ()
-  (loop :with chunks = (png-image-data (png-data png))
+  (loop :with chunks = (png-image-data (data parse-data))
         :with merged = (make-array `(,(reduce #'+ chunks :key #'length))
                                    :element-type 'octet)
         :for start = 0 :then (+ start (length chunk))
         :for chunk :in (reverse chunks)
         :do (replace merged chunk :start1 start)
-        :finally (setf (png-image-data (png-data png)) merged)))
+        :finally (setf (png-image-data (data parse-data)) merged)))
 
 (define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x
                                          green-y blue-x blue-y)
