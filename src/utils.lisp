@@ -24,28 +24,26 @@
 (defun octets= (stream octet-list)
   (equalp stream (octets-from octet-list)))
 
-(defun read-string (octets &key (encoding :latin-1))
-  (let ((end (or (position 0 octets :test #'=) (length octets))))
-    (babel:octets-to-string octets :end end :encoding encoding)))
-
-(defmacro read-bytes (count buffer)
-  `(fast-io::read-unsigned-be ,count ,buffer))
+(defun deflate-octets (octets)
+  (chipz:decompress nil :zlib octets))
 
 (defun buffer-data (buffer &key (bytes 1))
   (let ((octet-vector (make-octet-vector bytes)))
     (fast-read-sequence octet-vector buffer 0 bytes)
     octet-vector))
 
-(defun read-until-null (octets start end)
-  (let ((index (loop :for i :from start :below end
-                     :when (zerop (aref octets i))
-                       :do (return (1+ i))
-                     :finally (return (1+ i)))))
-    (values (subseq octets start index) index)))
+(defmacro read-integer (buffer &key (bytes 1))
+  `(fast-io::read-unsigned-be ,bytes ,buffer))
 
-(defun read-integer (octets start &key (bytes 1))
-  (let ((value 0))
-    (loop :for i :from (* (- bytes 1) 8) :downto 0 :by 8
-          :for byte = (aref octets (+ i start))
-          :collect (setf (ldb (byte 8 i) value) byte))
-    value))
+(defun read-string (buffer &key bytes nullp deflatep (encoding :latin-1))
+  (let* ((start (buffer-position buffer))
+         (octets (get-vector buffer))
+         (max-length (if nullp (1+ bytes) (or bytes (length octets))))
+         (end (min (length octets) (+ start max-length)))
+         (index (if nullp (position 0 octets :start start :end end) end))
+         (sequence (make-octet-vector (- index start))))
+    (fast-read-sequence sequence buffer)
+    (when nullp
+      (fast-read-byte buffer))
+    (babel:octets-to-string (if deflatep (deflate-octets sequence) sequence)
+                            :encoding encoding)))

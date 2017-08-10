@@ -44,8 +44,8 @@
   (let ((@ (buffer parse-data))
         (chunk (make-instance 'chunk)))
     (with-slots (length type data crc) chunk
-      (setf length (read-bytes 4 @)
-            type (read-bytes 4 @)
+      (setf length (read-integer @ :bytes 4)
+            type (read-integer @ :bytes 4)
             data (parse parse-data (chunk-type-name type) :length length)
-            crc (read-bytes 4 @)))
+            crc (read-integer @ :bytes 4)))
     chunk))
