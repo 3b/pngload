@@ -9,7 +9,7 @@
 
 (defstruct png
   colour-type
-  pallete-count)
+  palette-count)
 
 (defun read-png-stream (stream)
   (with-fast-input (buffer nil stream)
