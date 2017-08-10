@@ -13,7 +13,7 @@
                          &key length)
          (let ((data (,constructor)))
            (with-slots ,slots data
-             (with-fast-input (@ (buffer-data (buffer parse-data) :bytes length))
+             (with-fast-input (@ (read-bytes (buffer parse-data) :count length))
                (declare (ignorable @))
                ,@body))
            data)))))
@@ -105,8 +105,13 @@
 
 (define-chunk-data (itxt) (keyword compression-flag compression-method
                                    language-tag translated-keyword text)
-  ;; TODO
-  )
+  (setf keyword (read-string @ :bytes 79 :nullp t)
+        compression-flag (read-octet @)
+        compression-method (read-octet @)
+        language-tag (read-string @ :nullp t)
+        translated-keyword (read-string @ :nullp t :encoding :utf-8)
+        text (read-string @ :encoding :utf-8
+                            :deflatep (if (= compression-flag 1) t nil))))
 
 (define-chunk-data (ztxt) (keyword compression-method compressed-text-datastream)
   (setf keyword (read-string @ :bytes 79 :nullp t)
@@ -137,12 +142,23 @@
            blue (read-integer @ :bytes 2)
            green (read-integer @ :bytes 2)))
     (:indexed-colour
-     ;; TODO indexed colour
-     )))
+     (setf alpha-values (make-array length :element-type 'octet))
+     (dotimes (i length)
+       (setf (aref alpha-values i) (read-integer @ :bytes 1))))))
+
+(define-chunk-data (iccp) (profile-name compression-method compressed-profile)
+  (setf profile-name (read-string @ :bytes 79 :nullp t)
+        compression-method (read-octet @)
+        compressed-profile (read-bytes @ :count (- length (buffer-position @))
+                                         :deflatep t)))
 
 (defmethod parse (parse-data (node (eql :idat)) &key length)
   ;; TODO after metadata chunks
   (seek (buffer parse-data) length))
+
+(defmethod parse (parse-data (node (eql :exif)) &key length)
+  (seek (buffer parse-data) length)
+  (warn 'draft-chunk-detected :parse-data parse-data :chunk-type node))
 
 (define-chunk-data (iend) ())
 

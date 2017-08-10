@@ -15,7 +15,7 @@
     node))
 
 (defmethod parse (parse-data (node (eql :datastream/signature)) &key)
-  (let ((signature (buffer-data (buffer parse-data) :bytes 8)))
+  (let ((signature (read-bytes (buffer parse-data) :count 8)))
     (if (octets= signature '(137 80 78 71 13 10 26 10))
         signature
         (error 'invalid-png-stream :parse-data parse-data))))

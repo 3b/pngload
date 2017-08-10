@@ -30,6 +30,7 @@
     (#x69545874 :itxt)
     (#x74455874 :text)
     (#x7a545874 :ztxt)
+    (#x65584966 :exif)
     (otherwise :unknown-chunk)))
 
 (defun colour-type-name (colour-type)

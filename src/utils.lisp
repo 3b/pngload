@@ -27,27 +27,29 @@
 (defun deflate-octets (octets)
   (chipz:decompress nil :zlib octets))
 
-(defun buffer-data (buffer &key (bytes 1))
-  (let ((octet-vector (make-octet-vector bytes)))
-    (fast-read-sequence octet-vector buffer 0 bytes)
-    octet-vector))
+(defun read-octet (buffer)
+  (fast-read-byte buffer))
+
+(defun read-bytes (buffer &key (count 1) deflatep)
+  (let ((sequence (make-octet-vector count)))
+    (fast-read-sequence sequence buffer)
+    (if deflatep (deflate-octets sequence) sequence)))
 
 (defun read-integer (buffer &key (bytes 1))
   (let ((value 0))
     (loop :for i :from (* (1- bytes) 8) :downto 0 :by 8
-          :for byte = (fast-read-byte buffer)
+          :for byte = (read-octet buffer)
           :collect (setf (ldb (byte 8 i) value) byte))
     value))
 
 (defun read-string (buffer &key bytes nullp deflatep (encoding :latin-1))
   (let* ((start (buffer-position buffer))
          (octets (get-vector buffer))
-         (max-length (if nullp (1+ bytes) (or bytes (length octets))))
+         (max-length (or bytes (length octets)))
          (end (min (length octets) (+ start max-length)))
          (index (if nullp (position 0 octets :start start :end end) end))
          (sequence (make-octet-vector (- index start))))
     (fast-read-sequence sequence buffer)
-    (when nullp
-      (fast-read-byte buffer))
+    (when nullp (read-octet buffer))
     (babel:octets-to-string (if deflatep (deflate-octets sequence) sequence)
                             :encoding encoding)))
