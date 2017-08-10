@@ -9,6 +9,7 @@
     (with-slots (signature chunks) node
       (setf signature (parse-signature parse-data)
             chunks (parse-all-chunks parse-data)))
+    (deinterlace parse-data)
     node))
 
 (defun parse-signature (parse-data)

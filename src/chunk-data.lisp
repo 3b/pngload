@@ -12,9 +12,17 @@
        (defun ,(symbolicate 'parse- name '-data) (parse-data &key length)
          (let ((data (,constructor)))
            (with-slots ,slots data
-             (with-fast-input (@ (read-bytes (buffer parse-data) :count length))
-               (declare (ignorable @))
-               ,@body))
+             (with-accessors ((png-image-width png-image-width)
+                              (png-image-height png-image-height)
+                              (png-bit-depth png-bit-depth)
+                              (png-colour-type png-colour-type)
+                              (png-palette-count png-palette-count)
+                              (png-interlace-method png-interlace-method)
+                              (png-image-data png-image-data))
+                 (data parse-data)
+               (with-fast-input (@ (read-bytes (buffer parse-data) :count length))
+                 (declare (ignorable @))
+                 ,@body)))
            data)))))
 
 (define-chunk-data (ihdr) (width height bit-depth colour-type compression-method
@@ -26,28 +34,31 @@
         compression-method (read-octet @)
         filter-method (read-octet @)
         interlace-method (read-octet @))
-  (setf (png-colour-type (data parse-data)) (colour-type-name colour-type)))
+  (setf png-image-width width
+        png-image-height height
+        png-bit-depth bit-depth
+        png-colour-type (colour-type-name colour-type)
+        png-interlace-method (interlace-method-name interlace-method)))
 
 (define-chunk-data (plte) (palette-entries)
   (let ((entry-count (/ length 3)))
     (setf palette-entries (make-array `(,entry-count 3) :element-type 'octet)
-          (png-palette-count (data parse-data)) entry-count)
+          png-palette-count entry-count)
     (dotimes (entry entry-count)
       (dotimes (sample 3)
         (setf (aref palette-entries entry sample) (read-octet @))))))
 
 (define-chunk-data (idat) (data)
   (setf data (read-bytes @ :count length))
-  (push data (png-image-data (data parse-data))))
+  (push data png-image-data))
 
 (define-chunk-data (iend) ()
-  (loop :with chunks = (png-image-data (data parse-data))
-        :with merged = (make-array `(,(reduce #'+ chunks :key #'length))
+  (loop :with merged = (make-array `(,(reduce #'+ png-image-data :key #'length))
                                    :element-type 'octet)
         :for start = 0 :then (+ start (length chunk))
-        :for chunk :in (reverse chunks)
+        :for chunk :in (reverse png-image-data)
         :do (replace merged chunk :start1 start)
-        :finally (setf (png-image-data (data parse-data)) merged)))
+        :finally (setf png-image-data (deflate-octets merged))))
 
 (define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x
                                          green-y blue-x blue-y)
@@ -156,7 +167,7 @@
         language-tag (read-string @ :nullp t)
         translated-keyword (read-string @ :nullp t :encoding :utf-8)
         text (read-string @ :encoding :utf-8
-                            :deflatep (if (= compression-flag 1) t nil))))
+                            :deflatep (when (= compression-flag 1) t))))
 
 (define-chunk-data (text) (keyword text-string)
   (setf keyword (read-string @ :bytes 79 :nullp t)

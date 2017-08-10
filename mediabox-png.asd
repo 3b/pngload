@@ -22,4 +22,5 @@
    (:file "chunk")
    (:file "chunk-data")
    (:file "datastream")
+   (:file "deinterlace")
    (:file "png")))

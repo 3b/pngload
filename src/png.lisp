@@ -8,8 +8,12 @@
    (parse-tree :reader parse-tree)))
 
 (defstruct png
+  image-width
+  image-height
+  bit-depth
   colour-type
   palette-count
+  interlace-method
   image-data)
 
 (defun read-png-stream (stream)
