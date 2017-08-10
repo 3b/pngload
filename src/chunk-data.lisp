@@ -168,9 +168,7 @@
         compressed-text-datastream (read-string @ :deflatep t)))
 
 (define-chunk-data (exif) ()
-  (seek (buffer parse-data) length)
   (warn 'draft-chunk-detected :parse-data parse-data :chunk-type :exif))
 
 (define-chunk-data (unknown) ()
-  (seek (buffer parse-data) length)
   (warn 'unknown-chunk-detected :parse-data parse-data))
