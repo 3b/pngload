@@ -35,3 +35,17 @@
   (let ((octet-vector (make-octet-vector bytes)))
     (fast-read-sequence octet-vector buffer 0 bytes)
     octet-vector))
+
+(defun read-until-null (octets start end)
+  (let ((index (loop :for i :from start :below end
+                     :when (zerop (aref octets i))
+                       :do (return (1+ i))
+                     :finally (return (1+ i)))))
+    (values (subseq octets start index) index)))
+
+(defun read-integer (octets start &key (bytes 1))
+  (let ((value 0))
+    (loop :for i :from (* (- bytes 1) 8) :downto 0 :by 8
+          :for byte = (aref octets (+ i start))
+          :collect (setf (ldb (byte 8 i) value) byte))
+    value))

@@ -119,14 +119,25 @@
                                        nil
                                        :zlib (subseq octets (+ split 2)))))))
 
-(define-chunk-data (splt) (pallete-name sample-depth pallete-entries)
-  (let* ((octets (fast-io::input-buffer-vector @))
-         (split (position 0 octets))
-         (rest-bytes (- length (+ split 2))))
-    (setf pallete-name (read-string (subseq octets 0 split))
-          sample-depth (elt octets (1+ split)))
-    ;; TODO make pallete entries
-    #++(make-entries rest-bytes sample-depth)))
+(define-chunk-data (splt) (palette-name sample-depth palette-entries)
+  (let ((octets (get-vector @))
+        (token 0))
+    (multiple-value-bind (v i) (read-until-null octets token 79)
+      (setf palette-name (read-string v)
+            sample-depth (read-integer octets i)
+            token (+ i 1))
+
+      ;; R/G/B/A/F entries
+      ;; TODO: verify if this is correct/make it nicer
+      (let ((entry-count (/ (- length token)
+                            (ecase sample-depth (8 6) (16 10)))))
+        (setf palette-entries (make-array `(,entry-count 5)
+                                          :element-type '(unsigned-byte 16)))
+        (dotimes (entry entry-count)
+          (dotimes (sample 5)
+            (setf (aref palette-entries entry sample)
+                  (read-integer octets (+ token (* entry sample))
+                                :bytes (/ sample-depth 8)))))))))
 
 (define-chunk-data (trns) (grey red blue green alpha-values)
   (ecase (png-colour-type (data parse-data))
