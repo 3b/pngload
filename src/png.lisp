@@ -16,7 +16,7 @@
   (with-fast-input (buffer nil stream)
     (let ((parse-data (make-instance 'parse-data :buffer buffer)))
       (with-slots (parse-tree) parse-data
-        (setf parse-tree (parse parse-data :datastream)))
+        (setf parse-tree (parse-datastream parse-data)))
       parse-data)))
 
 (defun read-png-file (path)

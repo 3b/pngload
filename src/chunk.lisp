@@ -31,7 +31,7 @@
     (#x74455874 :text)
     (#x7a545874 :ztxt)
     (#x65584966 :exif)
-    (otherwise :unknown-chunk)))
+    (otherwise :unknown)))
 
 (defun colour-type-name (colour-type)
   (ecase colour-type
@@ -41,12 +41,15 @@
     (4 :greyscale-alpha)
     (6 :truecolour-alpha)))
 
-(defmethod parse (parse-data (node (eql :chunk)) &key)
+(defun get-parser-name (chunk-type)
+  (symbolicate 'parse- (chunk-type-name chunk-type) '-data))
+
+(defun parse-chunk (parse-data)
   (let ((@ (buffer parse-data))
         (chunk (make-instance 'chunk)))
     (with-slots (length type data crc) chunk
       (setf length (read-integer @ :bytes 4)
             type (read-integer @ :bytes 4)
-            data (parse parse-data (chunk-type-name type) :length length)
+            data (funcall (get-parser-name type) parse-data :length length)
             crc (read-integer @ :bytes 4)))
     chunk))

@@ -38,7 +38,7 @@
 (defun read-integer (buffer &key (bytes 1))
   (let ((value 0))
     (loop :for i :from (* (1- bytes) 8) :downto 0 :by 8
-          :for byte = (read-octet buffer)
+          :for byte = (fast-read-byte buffer)
           :collect (setf (ldb (byte 8 i) value) byte))
     value))
 
