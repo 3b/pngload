@@ -1,5 +1,7 @@
 (in-package :mediabox-png)
 
+(defvar *chunk* nil)
+
 (defclass chunk ()
   ((length :reader chunk-length)
    (type :reader chunk-type)
@@ -8,14 +10,14 @@
 
 (defmethod print-object ((object chunk) stream)
   (print-unreadable-object (object stream :type t)
-    (format stream "~S" (chunk-type-name (chunk-type object)))))
+    (format stream "~S" (chunk-name object))))
 
-(defun chunk-type-name (chunk-type)
-  (case chunk-type
-    (#x49484452 :ihdr)
-    (#x504c5445 :plte)
+(defun chunk-name (chunk)
+  (case (chunk-type chunk)
     (#x49444154 :idat)
+    (#x49484452 :ihdr)
     (#x49454e44 :iend)
+    (#x504c5445 :plte)
     (#x6348524d :chrm)
     (#x67414d41 :gama)
     (#x69434350 :iccp)
@@ -41,15 +43,17 @@
     (4 :greyscale-alpha)
     (6 :truecolour-alpha)))
 
-(defun get-parser-name (chunk-type)
-  (symbolicate 'parse- (chunk-type-name chunk-type) '-data))
+(defun chunk-size ()
+  (chunk-length *chunk*))
 
-(defun parse-chunk (parse-data)
-  (let ((@ (buffer parse-data))
-        (chunk (make-instance 'chunk)))
-    (with-slots (length type data crc) chunk
-      (setf length (read-integer @ :bytes 4)
-            type (read-integer @ :bytes 4)
-            data (funcall (get-parser-name type) parse-data :length length)
-            crc (read-integer @ :bytes 4)))
-    chunk))
+(defun chunk-offset ()
+  (- (chunk-length *chunk*) (buffer-position *buffer*)))
+
+(defun parse-chunk ()
+  (let ((*chunk* (make-instance 'chunk)))
+    (with-slots (length type data crc) *chunk*
+      (setf length (read-integer :bytes 4)
+            type (read-integer :bytes 4)
+            data (parse-chunk-data (chunk-name *chunk*))
+            crc (read-integer :bytes 4)))
+    *chunk*))

@@ -1,55 +1,39 @@
 (in-package :mediabox-png)
 
-(defun get-stream (buffer)
-  (fast-io::input-buffer-stream buffer))
+(defvar *buffer* nil)
 
-(defun get-vector (buffer)
-  (fast-io::input-buffer-vector buffer))
-
-(defun get-data-path (parse-data)
-  (let ((stream (get-stream (buffer parse-data))))
+(defun get-path ()
+  (let ((stream (fast-io::input-buffer-stream *buffer*)))
     (typecase stream
       (file-stream (pathname stream))
       (t :IN-MEMORY))))
 
-(defun seek (buffer &optional offset (start :current))
-  (with-slots (stream) buffer
-    (when offset
-      (ecase start
-        (:start (file-position stream offset))
-        (:end (file-position stream (- (file-length stream) offset)))
-        (:current (file-position stream (+ (file-position stream) offset)))))
-    (file-position stream)))
+(defun octets= (octet-vector octet-list)
+  (equalp octet-vector (octets-from octet-list)))
 
-(defun octets= (stream octet-list)
-  (equalp stream (octets-from octet-list)))
+(defun deflate-octets (octet-vector)
+  (chipz:decompress nil 'chipz:zlib octet-vector
+                    :buffer-size (* 2 (length octet-vector))))
 
-(defun deflate-octets (octets)
-  (chipz:decompress nil :zlib octets))
-
-(defun read-octet (buffer)
-  (fast-read-byte buffer))
-
-(defun read-bytes (buffer &key (count 1) deflatep)
+(defun read-bytes (count &key deflatep)
   (let ((sequence (make-octet-vector count)))
-    (fast-read-sequence sequence buffer)
+    (fast-read-sequence sequence *buffer*)
     (if deflatep (deflate-octets sequence) sequence)))
 
-(defun read-integer (buffer &key (bytes 1))
-  (let ((value 0))
-    (loop :for i :from (* (1- bytes) 8) :downto 0 :by 8
-          :for byte = (fast-read-byte buffer)
-          :collect (setf (ldb (byte 8 i) value) byte))
-    value))
+(defun read-integer (&key (bytes 1))
+  (ecase bytes
+    (1 (fast-read-byte *buffer*))
+    (2 (fast-io::read-unsigned-be 2 *buffer*))
+    (4 (fast-io::read-unsigned-be 4 *buffer*))))
 
-(defun read-string (buffer &key bytes nullp deflatep (encoding :latin-1))
-  (let* ((start (buffer-position buffer))
-         (octets (get-vector buffer))
+(defun read-string (&key bytes nullp deflatep (encoding :latin-1))
+  (let* ((start (buffer-position *buffer*))
+         (octets (fast-io::input-buffer-vector *buffer*))
          (max-length (or bytes (length octets)))
          (end (min (length octets) (+ start max-length)))
          (index (if nullp (position 0 octets :start start :end end) end))
          (sequence (make-octet-vector (- index start))))
-    (fast-read-sequence sequence buffer)
-    (when nullp (read-octet buffer))
+    (fast-read-sequence sequence *buffer*)
+    (when nullp (read-integer :bytes 1))
     (babel:octets-to-string (if deflatep (deflate-octets sequence) sequence)
                             :encoding encoding)))

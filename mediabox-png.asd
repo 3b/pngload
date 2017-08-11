@@ -23,4 +23,5 @@
    (:file "chunk-data")
    (:file "datastream")
    (:file "deinterlace")
+   (:file "decode")
    (:file "png")))
