@@ -2,16 +2,12 @@
 
 (defmacro define-chunk-data ((name) slots &body body)
   (with-gensyms (chunk-name chunk-data)
-    (let ((constructor (symbolicate 'make- name '-data)))
+    (let ((class-name (symbolicate 'chunk-data- name)))
       `(progn
-         (defstruct (,(symbolicate 'chunk-data- name)
-                     (:constructor ,constructor)
-                     (:conc-name ,(symbolicate name '-))
-                     (:copier nil)
-                     (:predicate nil))
-           ,@slots)
+         (defclass ,class-name ()
+           ,(loop :for slot :in slots :collect slot))
          (defmethod parse-chunk-data ((,chunk-name (eql ,(make-keyword name))))
-           (let ((,chunk-data (,constructor)))
+           (let ((,chunk-data (make-instance ',class-name)))
              (with-slots ,slots ,chunk-data
                (with-fast-input (*buffer* (read-bytes (chunk-size)))
                  ,@body))

@@ -2,15 +2,15 @@
 
 (defclass datastream ()
   ((signature :reader signature)
-   (chunks :accessor chunks :initform nil)))
+   (chunks :reader chunks)))
 
 (defun parse-datastream ()
-  (let ((node (make-instance 'datastream)))
-    (with-slots (signature chunks) node
+  (let ((datastream (make-instance 'datastream)))
+    (with-slots (signature chunks) datastream
       (setf signature (parse-signature)
             chunks (parse-all-chunks)))
     (decode)
-    node))
+    datastream))
 
 (defun parse-signature ()
   (let ((signature (read-bytes 8)))
