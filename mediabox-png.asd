@@ -12,7 +12,8 @@
   :depends-on (#:alexandria
                #:fast-io
                #:babel
-               #:chipz)
+               #:chipz
+               #:zpng)
   :pathname "src"
   :serial t
   :components
