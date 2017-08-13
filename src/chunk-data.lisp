@@ -44,10 +44,11 @@
 
 (define-chunk-data (iend) ()
   (loop :with data = (image-data *png-object*)
-        :with merged = (make-array `(,(reduce #'+ data :key #'length))
+        :with merged :of-type (simple-array octet (*))
+          := (make-array `(,(reduce #'+ data :key #'length))
                                    :element-type 'octet)
         :for start = 0 :then (+ start (length chunk))
-        :for chunk :in (reverse data)
+        :for chunk :of-type (simple-array octet (*)) :in (reverse data)
         :do (replace merged chunk :start1 start)
         :finally (setf (image-data *png-object*) (deflate-octets merged))))
 
