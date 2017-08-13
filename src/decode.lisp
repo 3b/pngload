@@ -17,8 +17,12 @@
 (defun get-scanline-bytes (width)
   (ceiling (* (bit-depth *png-object*)
               (get-channel-count)
-              (or width (width *png-object*)))
+              width)
            8))
+
+(defun get-image-bytes ()
+  (with-slots (width height) *png-object*
+    (+ height (* height (get-scanline-bytes width)))))
 
 (define-constant +filter-type-none+ 0)
 (define-constant +filter-type-sub+ 1)
