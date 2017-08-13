@@ -39,15 +39,15 @@
 (defun get-sub-image-bytes (width height)
   (* height (ceiling (* width (/ (get-pixel-bytes) 8)) 8)))
 
-(defun calculate-sub-image-dimensions (image-width image-height)
+(defun calculate-sub-image-dimensions ()
   (loop :for pass :below 7
         :collect
         (flet ((calc (dim array)
                  (multiple-value-bind (w e) (floor dim 8)
                    (+ (* (aref (aref array pass) 8) w)
                       (aref (aref array pass) e)))))
-          (list (calc image-width +adam7-widths+)
-                (calc image-height +adam7-heights+)))))
+          (list (calc (image-width *png-object*) +adam7-widths+)
+                (calc (image-height *png-object*) +adam7-heights+)))))
 
 (defun add-sub-image/sub-byte (dest pass w h image pixel-bits)
   (error "not done yet"))
@@ -69,14 +69,12 @@
 
 (defun deinterlace-adam7 (data)
   (loop :with pixel-bits = (* (bit-depth *png-object*) (get-channel-count))
-        :with width = (image-width *png-object*)
-        :with height = (image-height *png-object*)
         :with dest = (make-array (get-image-bytes)
                                  :element-type 'ub8
                                  :initial-element #xff)
         :for pass :below 7
         :for start = 0 :then skip
-        :for (sw sh) :in (calculate-sub-image-dimensions width height)
+        :for (sw sh) :in (calculate-sub-image-dimensions)
         :for skip = (+ start sh (get-sub-image-bytes sw sh))
         :do (unfilter data sh start)
             (if (< pixel-bits 8)
