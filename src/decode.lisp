@@ -165,7 +165,7 @@
         (unfilter data
                   (image-width *png-object*) (image-height *png-object*)
                   0)
-        (error "not done yet"))
+        (setf data (deinterlace-adam7 data)))
 
     (assert (and (typep bit-depth '(unsigned-byte 8))
                  (member bit-depth '(1 2 4 8 16))))

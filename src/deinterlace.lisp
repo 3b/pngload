@@ -46,16 +46,40 @@
           (list (calc image-width +adam7-widths+)
                 (calc image-height +adam7-heights+)))))
 
-(defun add-sub-image (dest pass w h image)
+
+(defun add-sub-image/sub-byte (dest pass w h image pixel-bits)
+  (error "not done yet"))
+
+
+(defun add-sub-image (dest source pass w h pixel-bytes start)
   (loop :with x1 = (1- (position 1 (aref +adam7-widths+ pass)))
         :with y1 = (1- (position 1 (aref +adam7-heights+ pass)))
         :with dx = (/ 8 (aref (aref +adam7-widths+ pass) 8))
         :with dy = (/ 8 (aref (aref +adam7-heights+ pass) 8))
+        :with dw = (image-width *png-object*)
         :for sy :below h
         :for y :from y1 :by dy
-        :do (loop :for sx :below w
-                  :for x :from x1 :by dx
-                  :do (setf (aref dest y x)
-                            (aref image sy sx)))))
+        :for dyb = (* y (* dw) pixel-bytes)
+        :for syb = (+ start (* sy w pixel-bytes))
+        :do (loop :for sx :below (* pixel-bytes w) :by pixel-bytes
+                  :for x :from (* x1 pixel-bytes) :by (* dx pixel-bytes)
+                  :do (loop :for i :below pixel-bytes
+                            do (setf (aref dest (+ dyb x i))
+                                     (aref source (+ syb sx i)))))))
 
-(defun deinterlace ())
+(defun deinterlace-adam7 (data)
+  (let* ((width (image-width *png-object*))
+         (height (image-width *png-object*))
+         (pixel-bits (* (get-channel-count)
+                        (bit-depth *png-object*)))
+         (dest (make-array (* height (ceiling (* width pixel-bits) 8))
+                           :element-type 'octet :initial-element #xff)))
+    (loop for pass below 7
+          for start = 0 then skip
+          for (sw sh) in (calculate-sub-image-dimensions width height)
+          for skip = (+ start sh (* sh (ceiling (* sw pixel-bits) 8)))
+          do (unfilter data sw sh start)
+             (if (< pixel-bits 8)
+                 (add-sub-image/sub-byte dest data pass sw sh pixel-bits)
+                 (add-sub-image dest data pass sw sh (/ pixel-bits 8) start)))
+    dest))
