@@ -32,7 +32,7 @@
 
 (define-chunk-data (plte) (palette-entries)
   (let ((entry-count (/ (chunk-size) 3)))
-    (setf palette-entries (make-array `(,entry-count 3) :element-type 'octet))
+    (setf palette-entries (make-array `(,entry-count 3) :element-type 'ub8))
     (dotimes (entry entry-count)
       (dotimes (sample 3)
         (setf (aref palette-entries entry sample) (read-integer :bytes 1))))
@@ -43,12 +43,12 @@
   (push data (data *png-object*)))
 
 (define-chunk-data (iend) ()
-        :with merged :of-type (simple-array octet (*))
-          := (make-array `(,(reduce #'+ data :key #'length))
-                                   :element-type 'octet)
   (loop :with data = (data *png-object*)
+        :with merged :of-type ub8a1d = (make-array
+                                        `(,(reduce #'+ data :key #'length))
+                                        :element-type 'ub8)
         :for start = 0 :then (+ start (length chunk))
-        :for chunk :of-type (simple-array octet (*)) :in (reverse data)
+        :for chunk :of-type ub8a1d :in (reverse data)
         :do (replace merged chunk :start1 start)
         :finally (setf (data *png-object*) (deflate-octets merged))))
 
@@ -104,7 +104,7 @@
 
 (define-chunk-data (hist) (frequencies)
   (let ((count (palette-count *png-object*)))
-    (setf frequencies (make-array count :element-type '(unsigned-byte 16)))
+    (setf frequencies (make-array count :element-type 'ub16))
     (dotimes (i count)
       (setf (aref frequencies i) (read-integer :bytes 2)))))
 
@@ -118,7 +118,7 @@
            green (read-integer :bytes 2)))
     (:indexed-colour
      (let ((size (chunk-size)))
-       (setf alpha-values (make-array size :element-type 'octet))
+       (setf alpha-values (make-array size :element-type 'ub8))
        (dotimes (i size)
          (setf (aref alpha-values i) (read-integer :bytes 1)))))))
 
@@ -133,8 +133,7 @@
   (let* ((entry-bytes (ecase sample-depth (8 6) (16 10)))
          (sample-bytes (/ sample-depth 8))
          (entry-count (/ (chunk-offset) entry-bytes)))
-    (setf palette-entries (make-array `(,entry-count 5)
-                                      :element-type '(unsigned-byte 16)))
+    (setf palette-entries (make-array `(,entry-count 5) :element-type 'ub16))
     (dotimes (entry entry-count)
       (dotimes (sample 4)
         (setf (aref palette-entries entry sample)

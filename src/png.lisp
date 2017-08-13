@@ -21,5 +21,5 @@
       *png-object*)))
 
 (defun read-png-file (path)
-  (with-open-file (in path :element-type 'octet)
+  (with-open-file (in path :element-type 'ub8)
     (read-png-stream in)))

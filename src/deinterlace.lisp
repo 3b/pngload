@@ -73,7 +73,7 @@
          (pixel-bits (* (get-channel-count)
                         (bit-depth *png-object*)))
          (dest (make-array (* height (ceiling (* width pixel-bits) 8))
-                           :element-type 'octet :initial-element #xff)))
+                           :element-type 'ub8 :initial-element #xff)))
     (loop for pass below 7
           for start = 0 then skip
           for (sw sh) in (calculate-sub-image-dimensions width height)
