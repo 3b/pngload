@@ -24,8 +24,8 @@
         compression-method (read-integer :bytes 1)
         filter-method (read-integer :bytes 1)
         interlace-method (read-integer :bytes 1))
-  (setf (image-width *png-object*) width
-        (image-height *png-object*) height
+  (setf (width *png-object*) width
+        (height *png-object*) height
         (bit-depth *png-object*) bit-depth
         (color-type *png-object*) (colour-type-name colour-type)
         (interlace-method *png-object*) (interlace-method-name interlace-method)))
@@ -40,17 +40,17 @@
 
 (define-chunk-data (idat) (data)
   (setf data (read-bytes (chunk-size)))
-  (push data (image-data *png-object*)))
+  (push data (data *png-object*)))
 
 (define-chunk-data (iend) ()
-  (loop :with data = (image-data *png-object*)
         :with merged :of-type (simple-array octet (*))
           := (make-array `(,(reduce #'+ data :key #'length))
                                    :element-type 'octet)
+  (loop :with data = (data *png-object*)
         :for start = 0 :then (+ start (length chunk))
         :for chunk :of-type (simple-array octet (*)) :in (reverse data)
         :do (replace merged chunk :start1 start)
-        :finally (setf (image-data *png-object*) (deflate-octets merged))))
+        :finally (setf (data *png-object*) (deflate-octets merged))))
 
 (define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x
                                          green-y blue-x blue-y)

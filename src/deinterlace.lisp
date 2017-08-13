@@ -36,15 +36,15 @@
     (0 :null)
     (1 :adam7)))
 
-(defun calculate-sub-image-dimensions (image-width image-height)
+(defun calculate-sub-image-dimensions (width height)
   (loop :for pass :below 7
         :collect
         (flet ((calc (dim array)
                  (multiple-value-bind (w e) (floor dim 8)
                    (+ (* (aref (aref array pass) 8) w)
                       (aref (aref array pass) e)))))
-          (list (calc image-width +adam7-widths+)
-                (calc image-height +adam7-heights+)))))
+          (list (calc width +adam7-widths+)
+                (calc height +adam7-heights+)))))
 
 
 (defun add-sub-image/sub-byte (dest pass w h image pixel-bits)
@@ -56,7 +56,7 @@
         :with y1 = (1- (position 1 (aref +adam7-heights+ pass)))
         :with dx = (/ 8 (aref (aref +adam7-widths+ pass) 8))
         :with dy = (/ 8 (aref (aref +adam7-heights+ pass) 8))
-        :with dw = (image-width *png-object*)
+        :with dw = (width *png-object*)
         :for sy :below h
         :for y :from y1 :by dy
         :for dyb = (* y (* dw) pixel-bytes)
@@ -68,8 +68,8 @@
                                      (aref source (+ syb sx i)))))))
 
 (defun deinterlace-adam7 (data)
-  (let* ((width (image-width *png-object*))
-         (height (image-width *png-object*))
+  (let* ((width (width *png-object*))
+         (height (height *png-object*))
          (pixel-bits (* (get-channel-count)
                         (bit-depth *png-object*)))
          (dest (make-array (* height (ceiling (* width pixel-bits) 8))

@@ -17,7 +17,7 @@
   (* (get-sample-bytes) (get-channel-count)))
 
 (defun get-scanline-bytes ()
-  (1+ (* (image-width *png-object*) (get-pixel-bytes))))
+  (1+ (* (width *png-object*) (get-pixel-bytes))))
 
 (defun get-filter-type-name (filter-type)
   (ecase filter-type
@@ -34,12 +34,12 @@
 (defconstant +ft0-paeth+ 4)
 
 (defun allocate-image-data ()
-  (with-slots (image-width image-height color-type bit-depth) *png-object*
+  (with-slots (width height color-type bit-depth) *png-object*
     (make-array (case color-type
-                  ((:truecolour :indexed-colour) `(,image-height ,image-width 3))
-                  (:truecolour-alpha `(,image-height ,image-width 4))
-                  (:greyscale-alpha `(,image-height ,image-width 2))
-                  (:greyscale `(,image-height ,image-width)))
+                  ((:truecolour :indexed-colour) `(,height ,width 3))
+                  (:truecolour-alpha `(,height ,width 4))
+                  (:greyscale-alpha `(,height ,width 2))
+                  (:greyscale `(,height ,width)))
                 :element-type (ecase bit-depth
                                 ((1 2 4 8) '(unsigned-byte 8))
                                 (16 '(unsigned-byte 16))))))
@@ -143,33 +143,30 @@
 (defun write-image ()
   (let* ((out (make-instance 'zpng:png
                              :color-type :truecolor
-                             :width (image-width *png-object*)
-                             :height (image-height *png-object*)))
+                             :width (width *png-object*)
+                             :height (height *png-object*)))
          (image (zpng:data-array out)))
-    (dotimes (x (image-width *png-object*))
-      (dotimes (y (image-height *png-object*))
+    (dotimes (x (width *png-object*))
+      (dotimes (y (height *png-object*))
         (dotimes (c 3)
           (setf (aref image y x c)
-                (ldb (byte 8 8) (aref (image-data *png-object*) y x c))))))
+                (ldb (byte 8 8) (aref (data *png-object*) y x c))))))
     (zpng:write-png out "/tmp/out.png")))
 
 (defun decode ()
   (declare (optimize speed (debug 3)))
-  (let ((scanlines (get-scanlines))
-        (data (image-data *png-object*))
+  (let ((data (data *png-object*))
         (bit-depth (bit-depth *png-object*)))
     (declare (type (simple-array (unsigned-byte 8) (*)) data))
-    (setf (image-data *png-object*) (allocate-image-data))
-    (if (eql (print (interlace-method *png-object*))
-             :null)
-        (unfilter data
-                  (image-width *png-object*) (image-height *png-object*)
-                  0)
+    (declare (ub8a1d data))
+    (setf (data *png-object*) (allocate-image-data))
+    (if (eql (print (interlace-method *png-object*)) :null)
+        (unfilter data (width *png-object*) (height *png-object*) 0)
         (setf data (deinterlace-adam7 data)))
 
     (assert (and (typep bit-depth '(unsigned-byte 8))
                  (member bit-depth '(1 2 4 8 16))))
-    (let ((image-data (image-data *png-object*)))
+    (let ((image-data (data *png-object*)))
       (if (= bit-depth 16)
           (locally (declare (type (simple-array (unsigned-byte 16))
                                   image-data))
