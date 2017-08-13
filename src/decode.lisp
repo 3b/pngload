@@ -21,7 +21,10 @@
   (* (get-sample-bytes) (get-channel-count)))
 
 (defun get-scanline-bytes ()
-  (* (image-width *png-object*) (get-pixel-bytes)))
+  (ceiling (* (bit-depth *png-object*)
+              (get-channel-count)
+              (image-width *png-object*))
+           8))
 
 (defun get-image-bytes ()
   (* (get-scanline-bytes) (image-height *png-object*)))
@@ -154,8 +157,8 @@
             (locally (declare (ub16a image-data))
               (loop :for d :below (array-total-size image-data)
                     :for s :below (array-total-size data) :by 2
-                    :for v :of-type ub16
-                      = (dpb (aref data s) (byte 8 8) (aref data (1+ s)))
+                    :for v :of-type ub16 = (dpb (aref data s) (byte 8 8)
+                                                (aref data (1+ s)))
                     :do (locally (declare (optimize speed (safety 0)))
                           (setf (row-major-aref image-data d) v))))
             (locally (declare (ub8a image-data))
