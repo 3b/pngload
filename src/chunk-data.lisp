@@ -43,14 +43,22 @@
   (push data (image-data *png-object*)))
 
 (define-chunk-data (iend) ()
-  (with-slots (data) *png-object*
-    (loop :with merged :of-type ub8a1d = (make-array `(,(reduce #'+ data
-                                                                :key #'length))
-                                                     :element-type 'ub8)
-          :for start = 0 :then (+ start (length chunk))
-          :for chunk :of-type ub8a1d :in (reverse data)
-          :do (replace merged chunk :start1 start)
-          :finally (setf data (deflate-octets merged)))))
+  (loop :with data = (reverse (image-data *png-object*))
+        :with dstate = (chipz:make-dstate 'chipz:zlib)
+        :with out = (make-array (+ (image-height *png-object*)
+                                   (* (image-height *png-object*)
+                                      (floor
+                                       (* (image-width *png-object*)
+                                          (bit-depth *png-object*)
+                                          (get-channel-count))
+                                       8)))
+                                :element-type 'octet)
+        :for part :in data
+        :for start = 0 :then (+ start written)
+        :for (read written)
+          := (multiple-value-list (chipz:decompress out dstate part
+                                                    :output-start start))
+        :finally (setf (image-data *png-object*) out)))
 
 (define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x
                                          green-y blue-x blue-y)
