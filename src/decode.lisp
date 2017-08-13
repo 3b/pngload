@@ -108,24 +108,28 @@
           (t c))))
 
 (defun unfilter-byte (filter x y data start start-up pixel-bytes)
-  (case filter
+  (ecase filter
     (#.+ft0-none+ 0)
     (#.+ft0-sub+ (unfilter-sub x data start pixel-bytes))
     (#.+ft0-up+ (unfilter-up x y data start-up))
     (#.+ft0-average+ (unfilter-average x y data start start-up pixel-bytes))
     (#.+ft0-paeth+ (unfilter-paeth x y data start start-up pixel-bytes))))
 
-(defun unfilter (scanlines)
-  (declare (optimize speed))
+(defun unfilter (data width height start)
+  (declare (optimize speed (debug 3))
+           (png-dimension width height)
+           (fixnum start)
+           (type (simple-array (unsigned-byte 8) (*)) data))
   (loop :with pixel-bytes = (get-pixel-bytes)
-        :with data :of-type (simple-array (unsigned-byte 8) (*))
-          := (first (aref scanlines 0))
-        :with row-bytes fixnum = (* pixel-bytes (image-width *png-object*))
+        :with row-bytes fixnum = (ceiling (* (bit-depth *png-object*)
+                                             (get-channel-count)
+                                             width)
+                                          8)
         :with scanline-bytes = (1+ row-bytes)
-        :for y :below (length scanlines)
-        :for in-start from 0 by scanline-bytes
-        :for left-start from 0 by row-bytes
-        :for up-start from (- row-bytes) by row-bytes
+        :for y :below height
+        :for in-start from start by scanline-bytes
+        :for left-start from start by row-bytes
+        :for up-start from (- start row-bytes) by row-bytes
         :for filter = (aref data in-start)
         :do (loop :for xs fixnum :from (1+ in-start)
                   :for xo fixnum :from left-start
@@ -134,7 +138,7 @@
                   :for out = (unfilter-byte filter x y data
                                             left-start up-start pixel-bytes)
                   :do (setf (aref data xo)
-                            (logand #xff (+ sample out))))))
+                            (ldb (byte 8 0) (+ sample out))))))
 
 (defun write-image ()
   (let* ((out (make-instance 'zpng:png
@@ -146,23 +150,28 @@
       (dotimes (y (image-height *png-object*))
         (dotimes (c 3)
           (setf (aref image y x c)
-                (aref (image-data *png-object*) y x c)))))
+                (ldb (byte 8 8) (aref (image-data *png-object*) y x c))))))
     (zpng:write-png out "/tmp/out.png")))
 
 (defun decode ()
-  (declare (optimize speed))
+  (declare (optimize speed (debug 3)))
   (let ((scanlines (get-scanlines))
         (data (image-data *png-object*))
         (bit-depth (bit-depth *png-object*)))
     (declare (type (simple-array (unsigned-byte 8) (*)) data))
     (setf (image-data *png-object*) (allocate-image-data))
-    (unfilter scanlines)
+    (if (eql (print (interlace-method *png-object*))
+             :null)
+        (unfilter data
+                  (image-width *png-object*) (image-height *png-object*)
+                  0)
+        (error "not done yet"))
 
     (assert (and (typep bit-depth '(unsigned-byte 8))
                  (member bit-depth '(1 2 4 8 16))))
     (let ((image-data (image-data *png-object*)))
       (if (= bit-depth 16)
-          (locally (declare (type (simple-array (unsigned-byte 16) (* * *))
+          (locally (declare (type (simple-array (unsigned-byte 16))
                                   image-data))
             (loop :for d :below (array-total-size image-data)
                   :for s :below (array-total-size data) :by 2
@@ -172,12 +181,12 @@
                               (aref data (1+ s))))
                   :do (progn ;locally (declare (optimize (safety 0)))
                         (setf (row-major-aref image-data d) v))))
-          (locally (declare (type (simple-array (unsigned-byte 8) (* * *))
+          (locally (declare (type (simple-array (unsigned-byte 8))
                                   image-data))
             (loop :for d :below (array-total-size image-data)
                   :for s :below (array-total-size data)
                   :do (setf (row-major-aref image-data d)
                             (aref data s))))))
     ;; write test image to file
-    ;(time (write-image))
+    ;;(time (write-image))
     *png-object*))
