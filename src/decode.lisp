@@ -14,22 +14,17 @@
 (defun get-pixel-bytes ()
   (* (get-sample-bytes) (get-channel-count)))
 
-(defun get-scanline-bytes ()
-  (1+ (* (width *png-object*) (get-pixel-bytes))))
+(defun get-scanline-bytes (width)
+  (ceiling (* (bit-depth *png-object*)
+              (get-channel-count)
+              (or width (width *png-object*)))
+           8))
 
-(defun get-filter-type-name (filter-type)
-  (ecase filter-type
-    (0 :none)
-    (1 :sub)
-    (2 :up)
-    (3 :average)
-    (4 :paeth)))
-
-(defconstant +ft0-none+ 0)
-(defconstant +ft0-sub+ 1)
-(defconstant +ft0-up+ 2)
-(defconstant +ft0-average+ 3)
-(defconstant +ft0-paeth+ 4)
+(define-constant +filter-type-none+ 0)
+(define-constant +filter-type-sub+ 1)
+(define-constant +filter-type-up+ 2)
+(define-constant +filter-type-average+ 3)
+(define-constant +filter-type-paeth+ 4)
 
 (defun allocate-image-data ()
   (with-slots (width height color-type bit-depth) *png-object*
@@ -98,73 +93,59 @@
 (declaim (inline unfilter-byte))
 (defun unfilter-byte (filter x y data start start-up pixel-bytes)
   (ecase filter
-    (#.+ft0-none+ 0)
-    (#.+ft0-sub+ (unfilter-sub x data start pixel-bytes))
-    (#.+ft0-up+ (unfilter-up x y data start-up))
-    (#.+ft0-average+ (unfilter-average x y data start start-up pixel-bytes))
-    (#.+ft0-paeth+ (unfilter-paeth x y data start start-up pixel-bytes))))
+    (#.+filter-type-none+ 0)
+    (#.+filter-type-sub+ (unfilter-sub x data start pixel-bytes))
+    (#.+filter-type-up+ (unfilter-up x y data start-up))
+    (#.+filter-type-average+
+     (unfilter-average x y data start start-up pixel-bytes))
+    (#.+filter-type-paeth+
+     (unfilter-paeth x y data start start-up pixel-bytes))))
 
 (defun unfilter (data width height start)
   (declare (ub32 width height)
            (fixnum start)
            (ub8a1d data))
   (loop :with pixel-bytes = (get-pixel-bytes)
-        :with row-bytes fixnum = (ceiling (* (bit-depth *png-object*)
-                                             (get-channel-count)
-                                             width)
-                                          8)
-        :with scanline-bytes = (1+ row-bytes)
+        :with scanline-bytes fixnum = (get-scanline-bytes width)
+        :with row-bytes = (1+ scanline-bytes)
         :for y :below height
-        :for in-start from start by scanline-bytes
-        :for left-start from start by row-bytes
-        :for up-start from (- start row-bytes) by row-bytes
+        :for in-start :from start :by row-bytes
+        :for left-start :from start :by scanline-bytes
+        :for up-start :from (- start scanline-bytes) :by scanline-bytes
         :for filter = (aref data in-start)
         :do (loop :for xs fixnum :from (1+ in-start)
                   :for xo fixnum :from left-start
-                  :for x fixnum :from 0 :below row-bytes
+                  :for x fixnum :below scanline-bytes
                   :for sample = (aref data xs)
-                  :for out = (unfilter-byte filter x y data
-                                            left-start up-start pixel-bytes)
+                  :for out = (unfilter-byte filter x y data left-start up-start
+                                            pixel-bytes)
                   :do (setf (aref data xo)
                             (ldb (byte 8 0) (+ sample out))))))
 
-(defun write-image ()
-  (let* ((out (make-instance 'zpng:png
-                             :color-type :truecolor
-                             :width (width *png-object*)
-                             :height (height *png-object*)))
-         (image (zpng:data-array out)))
-    (dotimes (x (width *png-object*))
-      (dotimes (y (height *png-object*))
-        (dotimes (c 3)
-          (setf (aref image y x c)
-                (ldb (byte 8 8) (aref (data *png-object*) y x c))))))
-    (zpng:write-png out "/tmp/out.png")))
-
 (defun decode ()
-  (let ((data (data *png-object*))
-        (bit-depth (bit-depth *png-object*)))
-    (declare (ub8a1d data))
-    (setf (data *png-object*) (allocate-image-data))
-    (if (eql (print (interlace-method *png-object*)) :null)
-        (unfilter data (width *png-object*) (height *png-object*) 0)
-        (setf data (deinterlace-adam7 data)))
-    (assert (and (typep bit-depth 'ub8)
-                 (member bit-depth '(1 2 4 8 16))))
-    (let ((image-data (data *png-object*)))
-      (if (= bit-depth 16)
-          (locally (declare (ub16a image-data))
-            (loop :for d :below (array-total-size image-data)
-                  :for s :below (array-total-size data) :by 2
-                  :for v of-type ub16
-                    = (locally (declare (optimize (safety 0)))
-                        (dpb (aref data s) (byte 8 8)
-                             (aref data (1+ s))))
-                  :do (locally (declare (optimize (safety 0)))
-                        (setf (row-major-aref image-data d) v))))
-          (locally (declare (ub8a image-data))
-            (loop :for d :below (array-total-size image-data)
-                  :for s :below (array-total-size data)
-                  :do (setf (row-major-aref image-data d)
-                            (aref data s))))))
+  (let ((data (data *png-object*)))
+    (with-slots (width height bit-depth interlace-method) *png-object*
+      (declare (ub8a1d data))
+      (setf (data *png-object*) (allocate-image-data))
+      (if (eql interlace-method :null)
+          (unfilter data width height 0)
+          (setf data (deinterlace-adam7 data)))
+      (assert (and (typep bit-depth 'ub8)
+                   (member bit-depth '(1 2 4 8 16))))
+      (let ((image-data (data *png-object*)))
+        (if (= bit-depth 16)
+            (locally (declare (ub16a image-data))
+              (loop :for d :below (array-total-size image-data)
+                    :for s :below (array-total-size data) :by 2
+                    :for v :of-type ub16
+                      = (locally (declare (optimize (safety 0)))
+                          (dpb (aref data s) (byte 8 8)
+                               (aref data (1+ s))))
+                    :do (locally (declare (optimize (safety 0)))
+                          (setf (row-major-aref image-data d) v))))
+            (locally (declare (ub8a image-data))
+              (loop :for d :below (array-total-size image-data)
+                    :for s :below (array-total-size data)
+                    :do (setf (row-major-aref image-data d)
+                              (aref data s)))))))
     *png-object*))

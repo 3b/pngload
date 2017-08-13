@@ -43,14 +43,14 @@
   (push data (data *png-object*)))
 
 (define-chunk-data (iend) ()
-  (loop :with data = (data *png-object*)
-        :with merged :of-type ub8a1d = (make-array
-                                        `(,(reduce #'+ data :key #'length))
-                                        :element-type 'ub8)
-        :for start = 0 :then (+ start (length chunk))
-        :for chunk :of-type ub8a1d :in (reverse data)
-        :do (replace merged chunk :start1 start)
-        :finally (setf (data *png-object*) (deflate-octets merged))))
+  (with-slots (data) *png-object*
+    (loop :with merged :of-type ub8a1d = (make-array
+                                          `(,(reduce #'+ data :key #'length))
+                                          :element-type 'ub8)
+          :for start = 0 :then (+ start (length chunk))
+          :for chunk :of-type ub8a1d :in (reverse data)
+          :do (replace merged chunk :start1 start)
+          :finally (setf data (deflate-octets merged)))))
 
 (define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x
                                          green-y blue-x blue-y)
