@@ -4,14 +4,14 @@
 
 (defclass png-object ()
   ((parse-tree :accessor parse-tree)
-   (width :accessor image-width)
-   (height :accessor image-height)
+   (width :accessor width)
+   (height :accessor height)
    (bit-depth :accessor bit-depth)
    (color-type :accessor color-type)
    (palette-count :accessor palette-count
                   :initform 0)
    (interlace-method :accessor interlace-method)
-   (data :accessor image-data
+   (data :accessor data
          :initform nil)))
 
 (defun read-png-stream (stream)

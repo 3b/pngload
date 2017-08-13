@@ -24,8 +24,8 @@
         compression-method (read-integer :bytes 1)
         filter-method (read-integer :bytes 1)
         interlace-method (read-integer :bytes 1))
-  (setf (image-width *png-object*) width
-        (image-height *png-object*) height
+  (setf (width *png-object*) width
+        (height *png-object*) height
         (bit-depth *png-object*) bit-depth
         (color-type *png-object*) (colour-type-name colour-type)
         (interlace-method *png-object*) (interlace-method-name interlace-method)))
@@ -40,25 +40,18 @@
 
 (define-chunk-data (idat) (data)
   (setf data (read-bytes (chunk-size)))
-  (push data (image-data *png-object*)))
+  (push data (data *png-object*)))
 
 (define-chunk-data (iend) ()
-  (loop :with data = (reverse (image-data *png-object*))
+  (loop :with data = (reverse (data *png-object*))
         :with dstate = (chipz:make-dstate 'chipz:zlib)
-        :with out = (make-array (+ (image-height *png-object*)
-                                   (* (image-height *png-object*)
-                                      (floor
-                                       (* (image-width *png-object*)
-                                          (bit-depth *png-object*)
-                                          (get-channel-count))
-                                       8)))
-                                :element-type 'octet)
+        :with out = (make-array (get-image-bytes) :element-type 'ub8)
         :for part :in data
         :for start = 0 :then (+ start written)
-        :for (read written)
-          := (multiple-value-list (chipz:decompress out dstate part
-                                                    :output-start start))
-        :finally (setf (image-data *png-object*) out)))
+        :for (read written) = (multiple-value-list
+                               (chipz:decompress out dstate part
+                                                 :output-start start))
+        :finally (setf (data *png-object*) out)))
 
 (define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x
                                          green-y blue-x blue-y)

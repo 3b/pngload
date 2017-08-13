@@ -1,11 +1,5 @@
 (in-package :mediabox-png)
 
-(define-constant +filter-type-none+ 0)
-(define-constant +filter-type-sub+ 1)
-(define-constant +filter-type-up+ 2)
-(define-constant +filter-type-average+ 3)
-(define-constant +filter-type-paeth+ 4)
-
 (defun get-channel-count ()
   (ecase (color-type *png-object*)
     (:truecolour 3)
@@ -20,18 +14,25 @@
 (defun get-pixel-bytes ()
   (* (get-sample-bytes) (get-channel-count)))
 
-(defun get-scanline-bytes ()
+(defun get-scanline-bytes (width)
   (ceiling (* (bit-depth *png-object*)
               (get-channel-count)
-              (image-width *png-object*))
+              width)
            8))
 
 (defun get-image-bytes ()
-  (* (get-scanline-bytes) (image-height *png-object*)))
+  (with-slots (width height) *png-object*
+    (+ height (* height (get-scanline-bytes width)))))
+
+(define-constant +filter-type-none+ 0)
+(define-constant +filter-type-sub+ 1)
+(define-constant +filter-type-up+ 2)
+(define-constant +filter-type-average+ 3)
+(define-constant +filter-type-paeth+ 4)
 
 (defun allocate-image-data ()
   (with-slots (width height color-type bit-depth) *png-object*
-    (make-array (ecase color-type
+    (make-array (case color-type
                   ((:truecolour :indexed-colour) `(,height ,width 3))
                   (:truecolour-alpha `(,height ,width 4))
                   (:greyscale-alpha `(,height ,width 2))
@@ -71,8 +72,7 @@
   (let ((a (unfilter-sub x data start pixel-bytes))
         (b (unfilter-up x y data start-up)))
     (declare (ub8 a b))
-    (floor (+ a b)
-           2)))
+    (floor (+ a b) 2)))
 
 (declaim (inline unfilter-paeth))
 (defun unfilter-paeth (x y data start-left start-up pixel-bytes)
@@ -105,13 +105,13 @@
     (#.+filter-type-paeth+
      (unfilter-paeth x y data start start-up pixel-bytes))))
 
-(defun unfilter (data height start)
-  (declare (ub32 height)
+(defun unfilter (data width height start)
+  (declare (ub32 width height)
            (fixnum start)
            (ub8a1d data))
   (loop :with pixel-bytes = (get-pixel-bytes)
-        :with scanline-bytes fixnum = (get-scanline-bytes)
-        :with row-bytes fixnum = (1+ scanline-bytes)
+        :with scanline-bytes fixnum = (get-scanline-bytes width)
+        :with row-bytes = (1+ scanline-bytes)
         :for y :below height
         :for in-start :from start :by row-bytes
         :for left-start :from start :by scanline-bytes
@@ -121,38 +121,22 @@
                   :for xo fixnum :from left-start
                   :for x fixnum :below scanline-bytes
                   :for sample = (aref data xs)
-                  :for out = (unfilter-byte filter x y data
-                                            left-start up-start pixel-bytes)
+                  :for out = (unfilter-byte filter x y data left-start up-start
+                                            pixel-bytes)
                   :do (setf (aref data xo)
                             (ldb (byte 8 0) (+ sample out))))))
 
-(defun write-image ()
-  (let* ((out (make-instance 'zpng:png
-                             :color-type :truecolor
-                             :width (image-width *png-object*)
-                             :height (image-height *png-object*)))
-         (image (zpng:data-array out))
-         (bpp (bit-depth *png-object*)))
-    (dotimes (x (image-width *png-object*))
-      (dotimes (y (image-height *png-object*))
-        (dotimes (c 3)
-          (setf (aref image y x c)
-                (if (= bpp 16)
-                    (ldb (byte 8 8) (aref (image-data *png-object*) y x c))
-                     (aref (image-data *png-object*) y x c))))))
-    (zpng:write-png out "/tmp/out.png")))
-
 (defun decode ()
-  (let ((data (image-data *png-object*)))
-    (with-slots (height bit-depth interlace-method) *png-object*
+  (let ((data (data *png-object*)))
+    (with-slots (width height bit-depth interlace-method) *png-object*
       (declare (ub8a1d data))
-      (setf (image-data *png-object*) (allocate-image-data))
+      (setf (data *png-object*) (allocate-image-data))
       (if (eq interlace-method :null)
-          (unfilter data height 0)
+          (unfilter data width height 0)
           (setf data (deinterlace-adam7 data)))
       (assert (and (typep bit-depth 'ub8)
                    (member bit-depth '(1 2 4 8 16))))
-      (let ((image-data (image-data *png-object*)))
+      (let ((image-data (data *png-object*)))
         (if (= bit-depth 16)
             (locally (declare (ub16a image-data))
               (loop :for d :below (array-total-size image-data)
