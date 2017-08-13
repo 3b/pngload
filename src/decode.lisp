@@ -25,6 +25,12 @@
     (3 :average)
     (4 :paeth)))
 
+(defconstant +ft0-none+ 0)
+(defconstant +ft0-sub+ 1)
+(defconstant +ft0-up+ 2)
+(defconstant +ft0-average+ 3)
+(defconstant +ft0-paeth+ 4)
+
 (defun allocate-image-data ()
   (with-slots (image-width image-height color-type) *png-object*
     (make-array (case color-type
@@ -40,15 +46,22 @@
         :for line :below (length scanlines)
         :for start = (* line size)
         :for end = (min (length data) (* (1+ line) size))
-        :do (setf (aref scanlines line) (subseq data start end))
+        :do (setf (aref scanlines line) (list data start (- end start)))
         :finally (return scanlines)))
 
 (defun unfilter-sub (x y scanlines pixel-bytes)
-  (let ((scanline (aref scanlines y)))
-    (if (> x pixel-bytes) (aref scanline (- x pixel-bytes)) 0)))
+  (destructuring-bind (data start end) (aref scanlines y)
+    (assert (< x end))
+    (if (> x pixel-bytes)
+        (aref data (+ start (- x pixel-bytes)))
+        0)))
 
 (defun unfilter-up (x y scanlines)
-  (if (zerop y) 0 (aref (aref scanlines (1- y)) x)))
+  (if (zerop y)
+      0
+      (destructuring-bind (data start end) (aref scanlines (1- y))
+        (assert (< x end))
+        (aref data (+ x start)))))
 
 (defun unfilter-average (x y scanlines pixel-bytes)
   (floor (+ (unfilter-sub x y scanlines pixel-bytes)
@@ -58,7 +71,9 @@
 (defun unfilter-paeth (x y scanlines pixel-bytes)
   (let* ((a (unfilter-sub x y scanlines pixel-bytes))
          (b (unfilter-up x y scanlines))
-         (c (unfilter-sub x (1- y) scanlines pixel-bytes))
+         (c (if (plusp y)
+                (unfilter-sub x (1- y) scanlines pixel-bytes)
+                0))
          (p (- (+ a b) c))
          (pa (abs (- p a)))
          (pb (abs (- p b)))
@@ -69,21 +84,22 @@
 
 (defun unfilter-byte (filter x y scanlines pixel-bytes)
   (case filter
-    (:none 0)
-    (:sub (unfilter-sub x y scanlines pixel-bytes))
-    (:up (unfilter-up x y scanlines))
-    (:average (unfilter-average x y scanlines pixel-bytes))
-    (:paeth (unfilter-paeth x y scanlines pixel-bytes))))
+    (#.+ft0-none+ 0)
+    (#.+ft0-sub+ (unfilter-sub x y scanlines pixel-bytes))
+    (#.+ft0-up+ (unfilter-up x y scanlines))
+    (#.+ft0-average+ (unfilter-average x y scanlines pixel-bytes))
+    (#.+ft0-paeth+ (unfilter-paeth x y scanlines pixel-bytes))))
 
 (defun unfilter (scanlines)
   (loop :with pixel-bytes = (get-pixel-bytes)
         :for y :below (length scanlines)
-        :for scanline = (aref scanlines y)
-        :for filter = (get-filter-type-name (aref scanline 0))
-        :do (loop :for x :below (length scanline)
-                  :for sample = (aref scanline x)
+        :for (data start len) = (aref scanlines y)
+        :for filter = (aref data start)
+        :do (loop :for xs :from start
+                  :for x :from 0 :below len
+                  :for sample = (aref data xs)
                   :for out = (unfilter-byte filter x y scanlines pixel-bytes)
-                  :do (setf (aref scanline x) (mod (+ sample out) 256)))))
+                  :do (setf (aref data xs) (mod (+ sample out) 256)))))
 
 (defun write-image ()
   (let* ((out (make-instance 'zpng:png
@@ -103,15 +119,5 @@
     (unfilter scanlines)
 
     ;; write test image to file
-    (loop :with image-data = (image-data *png-object*)
-          :with bda = (get-sample-bytes)
-          :for scanline :across scanlines
-          :for k :from 0
-          :do (loop :for x :from 1 :below (length scanline) :by bda
-                    :for y :from 0
-                    :do (setf (aref image-data (floor y (* bda 3)) k (mod y 3))
-                              (loop :for i :from (1- bda) :downto 0
-                                    :for j :from x :below (expt 2 20)
-                                    :sum (ash (aref scanline j) (* 8 i)) :into s
-                                    :finally (return s)))))
-    (write-image)))
+    #++(write-image)
+    *png-object*))
