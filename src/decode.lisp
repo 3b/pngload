@@ -1,5 +1,7 @@
 (in-package :mediabox-png)
 
+(deftype png-dimension () '(unsigned-byte 32))
+
 (defun get-channel-count ()
   (ecase (color-type *png-object*)
     (:truecolour 3)
@@ -25,13 +27,22 @@
     (3 :average)
     (4 :paeth)))
 
+(defconstant +ft0-none+ 0)
+(defconstant +ft0-sub+ 1)
+(defconstant +ft0-up+ 2)
+(defconstant +ft0-average+ 3)
+(defconstant +ft0-paeth+ 4)
+
 (defun allocate-image-data ()
-  (with-slots (image-width image-height color-type) *png-object*
+  (with-slots (image-width image-height color-type bit-depth) *png-object*
     (make-array (case color-type
-                  ((:truecolour :indexed-colour) `(,image-width ,image-height 3))
-                  (:truecolour-alpha `(,image-width ,image-height 4))
-                  (:greyscale-alpha `(,image-width ,image-height 2))
-                  (:greyscale `(,image-width ,image-height))))))
+                  ((:truecolour :indexed-colour) `(,image-height ,image-width 3))
+                  (:truecolour-alpha `(,image-height ,image-width 4))
+                  (:greyscale-alpha `(,image-height ,image-width 2))
+                  (:greyscale `(,image-height ,image-width)))
+                :element-type (ecase bit-depth
+                                ((1 2 4 8) '(unsigned-byte 8))
+                                (16 '(unsigned-byte 16))))))
 
 (defun get-scanlines ()
   (loop :with data = (image-data *png-object*)
@@ -40,50 +51,94 @@
         :for line :below (length scanlines)
         :for start = (* line size)
         :for end = (min (length data) (* (1+ line) size))
-        :do (setf (aref scanlines line) (subseq data start end))
+        :do (setf (aref scanlines line) (list data start (- end start)))
         :finally (return scanlines)))
 
-(defun unfilter-sub (x y scanlines pixel-bytes)
-  (let ((scanline (aref scanlines y)))
-    (if (> x pixel-bytes) (aref scanline (- x pixel-bytes)) 0)))
+(declaim (inline unfilter-sub unfilter-up unfilter-average unfilter-paeth
+                 unfilter-byte))
 
-(defun unfilter-up (x y scanlines)
-  (if (zerop y) 0 (aref (aref scanlines (1- y)) x)))
+(defun unfilter-sub (x data start pixel-bytes)
+  (declare (type (simple-array (unsigned-byte 8) (*)) data)
+           (type (unsigned-byte 8) pixel-bytes)
+           (type png-dimension x)
+           (fixnum start)
+           (optimize speed))
+  (if (>= x pixel-bytes)
+      (aref data (+ start (- x pixel-bytes)))
+      0))
 
-(defun unfilter-average (x y scanlines pixel-bytes)
-  (floor (+ (unfilter-sub x y scanlines pixel-bytes)
-            (unfilter-up x y scanlines))
-         2))
+(defun unfilter-up (x y data start-up)
+  (declare (type (simple-array (unsigned-byte 8) (*)) data)
+           (type png-dimension x y)
+           (fixnum start-up)
+           (optimize speed))
+  (if (zerop y)
+      0
+      (aref data (+ x start-up))))
 
-(defun unfilter-paeth (x y scanlines pixel-bytes)
-  (let* ((a (unfilter-sub x y scanlines pixel-bytes))
-         (b (unfilter-up x y scanlines))
-         (c (unfilter-sub x (1- y) scanlines pixel-bytes))
+(defun unfilter-average (x y data start start-up pixel-bytes)
+  (declare (type (simple-array (unsigned-byte 8) (*)) data)
+           (type png-dimension x y)
+           (fixnum start start-up)
+           (type (unsigned-byte 8) pixel-bytes)
+           (optimize speed))
+  (let ((a (unfilter-sub x data start pixel-bytes))
+        (b (unfilter-up x y data start-up)))
+    (declare (type (unsigned-byte 8) a b))
+    (floor (+ a b)
+           2)))
+
+(defun unfilter-paeth (x y data start-left start-up pixel-bytes)
+  (declare (type (simple-array (unsigned-byte 8) (*)) data)
+           (type png-dimension x y)
+           (fixnum start-left start-up)
+           (type (unsigned-byte 8) pixel-bytes)
+           (optimize speed))
+  (let* ((a (unfilter-sub x data start-left pixel-bytes))
+         (b (unfilter-up x y data start-up))
+         (c (if (plusp y)
+                (unfilter-sub x data start-up pixel-bytes)
+                0))
          (p (- (+ a b) c))
          (pa (abs (- p a)))
          (pb (abs (- p b)))
          (pc (abs (- p c))))
-    (cond ((<= pa pb pc) a)
+    (cond ((and (<= pa pb) (<= pa pc)) a)
           ((<= pb pc) b)
           (t c))))
 
-(defun unfilter-byte (filter x y scanlines pixel-bytes)
-  (case filter
-    (:none 0)
-    (:sub (unfilter-sub x y scanlines pixel-bytes))
-    (:up (unfilter-up x y scanlines))
-    (:average (unfilter-average x y scanlines pixel-bytes))
-    (:paeth (unfilter-paeth x y scanlines pixel-bytes))))
+(defun unfilter-byte (filter x y data start start-up pixel-bytes)
+  (ecase filter
+    (#.+ft0-none+ 0)
+    (#.+ft0-sub+ (unfilter-sub x data start pixel-bytes))
+    (#.+ft0-up+ (unfilter-up x y data start-up))
+    (#.+ft0-average+ (unfilter-average x y data start start-up pixel-bytes))
+    (#.+ft0-paeth+ (unfilter-paeth x y data start start-up pixel-bytes))))
 
-(defun unfilter (scanlines)
+(defun unfilter (data width height start)
+  (declare (optimize speed (debug 3))
+           (png-dimension width height)
+           (fixnum start)
+           (type (simple-array (unsigned-byte 8) (*)) data))
   (loop :with pixel-bytes = (get-pixel-bytes)
-        :for y :below (length scanlines)
-        :for scanline = (aref scanlines y)
-        :for filter = (get-filter-type-name (aref scanline 0))
-        :do (loop :for x :below (length scanline)
-                  :for sample = (aref scanline x)
-                  :for out = (unfilter-byte filter x y scanlines pixel-bytes)
-                  :do (setf (aref scanline x) (mod (+ sample out) 256)))))
+        :with row-bytes fixnum = (ceiling (* (bit-depth *png-object*)
+                                             (get-channel-count)
+                                             width)
+                                          8)
+        :with scanline-bytes = (1+ row-bytes)
+        :for y :below height
+        :for in-start from start by scanline-bytes
+        :for left-start from start by row-bytes
+        :for up-start from (- start row-bytes) by row-bytes
+        :for filter = (aref data in-start)
+        :do (loop :for xs fixnum :from (1+ in-start)
+                  :for xo fixnum :from left-start
+                  :for x fixnum :from 0 :below row-bytes
+                  :for sample = (aref data xs)
+                  :for out = (unfilter-byte filter x y data
+                                            left-start up-start pixel-bytes)
+                  :do (setf (aref data xo)
+                            (ldb (byte 8 0) (+ sample out))))))
 
 (defun write-image ()
   (let* ((out (make-instance 'zpng:png
@@ -94,24 +149,44 @@
     (dotimes (x (image-width *png-object*))
       (dotimes (y (image-height *png-object*))
         (dotimes (c 3)
-          (setf (aref image y x c) (aref (image-data *png-object*) x y c)))))
+          (setf (aref image y x c)
+                (ldb (byte 8 8) (aref (image-data *png-object*) y x c))))))
     (zpng:write-png out "/tmp/out.png")))
 
 (defun decode ()
-  (let ((scanlines (get-scanlines)))
+  (declare (optimize speed (debug 3)))
+  (let ((scanlines (get-scanlines))
+        (data (image-data *png-object*))
+        (bit-depth (bit-depth *png-object*)))
+    (declare (type (simple-array (unsigned-byte 8) (*)) data))
     (setf (image-data *png-object*) (allocate-image-data))
-    (unfilter scanlines)
+    (if (eql (print (interlace-method *png-object*))
+             :null)
+        (unfilter data
+                  (image-width *png-object*) (image-height *png-object*)
+                  0)
+        (setf data (deinterlace-adam7 data)))
 
+    (assert (and (typep bit-depth '(unsigned-byte 8))
+                 (member bit-depth '(1 2 4 8 16))))
+    (let ((image-data (image-data *png-object*)))
+      (if (= bit-depth 16)
+          (locally (declare (type (simple-array (unsigned-byte 16))
+                                  image-data))
+            (loop :for d :below (array-total-size image-data)
+                  :for s :below (array-total-size data) :by 2
+                  :for v of-type (unsigned-byte 16)
+                    := (progn ;locally (declare (optimize (safety 0)))
+                         (dpb (aref data s) (byte 8 8)
+                              (aref data (1+ s))))
+                  :do (progn ;locally (declare (optimize (safety 0)))
+                        (setf (row-major-aref image-data d) v))))
+          (locally (declare (type (simple-array (unsigned-byte 8))
+                                  image-data))
+            (loop :for d :below (array-total-size image-data)
+                  :for s :below (array-total-size data)
+                  :do (setf (row-major-aref image-data d)
+                            (aref data s))))))
     ;; write test image to file
-    (loop :with image-data = (image-data *png-object*)
-          :with bda = (get-sample-bytes)
-          :for scanline :across scanlines
-          :for k :from 0
-          :do (loop :for x :from 1 :below (length scanline) :by bda
-                    :for y :from 0
-                    :do (setf (aref image-data (floor y (* bda 3)) k (mod y 3))
-                              (loop :for i :from (1- bda) :downto 0
-                                    :for j :from x :below (expt 2 20)
-                                    :sum (ash (aref scanline j) (* 8 i)) :into s
-                                    :finally (return s)))))
-    (write-image)))
+    ;;(time (write-image))
+    *png-object*))
