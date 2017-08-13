@@ -124,17 +124,20 @@
                             (ldb (byte 8 0) (+ sample out))))))
 
 (defun write-image ()
-  (with-slots (width height data) *png-object*
-    (let* ((out (make-instance 'zpng:png
-                               :color-type :truecolor
-                               :width width
-                               :height height))
-           (image (zpng:data-array out)))
-      (dotimes (x width)
-        (dotimes (y height)
-          (dotimes (c 3)
-            (setf (aref image y x c) (aref data y x c)))))
-      (zpng:write-png out "/tmp/out.png"))))
+  (let* ((out (make-instance 'zpng:png
+                             :color-type :truecolor
+                             :width (image-width *png-object*)
+                             :height (image-height *png-object*)))
+         (image (zpng:data-array out))
+         (bpp (bit-depth *png-object*)))
+    (dotimes (x (image-width *png-object*))
+      (dotimes (y (image-height *png-object*))
+        (dotimes (c 3)
+          (setf (aref image y x c)
+                (if (= bpp 16)
+                    (ldb (byte 8 8) (aref (image-data *png-object*) y x c))
+                     (aref (image-data *png-object*) y x c))))))
+    (zpng:write-png out "/tmp/out.png")))
 
 (defun decode ()
   (let ((data (image-data *png-object*)))
