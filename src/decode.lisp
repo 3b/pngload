@@ -42,19 +42,7 @@
                                 ((1 2 4 8) 'ub8)
                                 (16 'ub16)))))
 
-(defun get-scanlines ()
-  (loop :with data = (image-data *png-object*)
-        :with scanlines = (make-array (image-height *png-object*))
-        :with size = (get-scanline-bytes)
-        :for line :below (length scanlines)
-        :for start = (* line size)
-        :for end = (min (length data) (* (1+ line) size))
-        :do (setf (aref scanlines line) (list data start (- end start)))
-        :finally (return scanlines)))
-
-(declaim (inline unfilter-sub unfilter-up unfilter-average unfilter-paeth
-                 unfilter-byte))
-
+(declaim (inline unfilter-sub))
 (defun unfilter-sub (x data start pixel-bytes)
   (declare (ub8a1d data)
            (ub8 pixel-bytes)
@@ -65,6 +53,7 @@
       (aref data (+ start (- x pixel-bytes)))
       0))
 
+(declaim (inline unfilter-up))
 (defun unfilter-up (x y data start-up)
   (declare (ub8a1d data)
            (ub32 x y)
@@ -74,6 +63,7 @@
       0
       (aref data (+ x start-up))))
 
+(declaim (inline unfilter-average))
 (defun unfilter-average (x y data start start-up pixel-bytes)
   (declare (ub8a1d data)
            (ub32 x y)
@@ -82,10 +72,10 @@
            (optimize speed))
   (let ((a (unfilter-sub x data start pixel-bytes))
         (b (unfilter-up x y data start-up)))
-    (floor (+ a b)
-           2)))
     (declare (ub8 a b))
+    (floor (+ a b) 2)))
 
+(declaim (inline unfilter-paeth))
 (defun unfilter-paeth (x y data start-left start-up pixel-bytes)
   (declare (ub8a1d data)
            (ub32 x y)
@@ -105,6 +95,7 @@
           ((<= pb pc) b)
           (t c))))
 
+(declaim (inline unfilter-byte))
 (defun unfilter-byte (filter x y data start start-up pixel-bytes)
   (ecase filter
     (#.+ft0-none+ 0)
@@ -151,7 +142,6 @@
     (zpng:write-png out "/tmp/out.png")))
 
 (defun decode ()
-  (declare (optimize speed (debug 3)))
   (let ((data (data *png-object*))
         (bit-depth (bit-depth *png-object*)))
     (declare (ub8a1d data))
