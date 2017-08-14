@@ -95,10 +95,7 @@
           :for (sw sh) :in (calculate-sub-image-dimensions)
           :for scanline-bytes = (get-scanline-bytes sw)
           :for next = (+ start sh (* sh (ceiling (* sw pixel-bits) 8)))
-          :do (format t "pass ~s: ~sx~s, sb=~s (~s), ~s->~s (~s)~%"
-                      pass sw sh scanline-bytes (* sh (1+ scanline-bytes))
-                      start next (- next start))
-              (unfilter data sw sh start)
+          :do (unfilter data sw sh start)
               (if (< pixel-bits 8)
                   (add-sub-image/sub-byte dest data pass sw sh pixel-bits start)
                   (add-sub-image dest data pass sw sh (/ pixel-bits 8) start))
