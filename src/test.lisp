@@ -52,12 +52,4 @@
 (defun test-read-times (file &key (count 1))
   (test-read-time "mediabox-png" #'read-png-file file count)
   (test-read-time "opticl" #'opticl:read-image-file file count)
-  (test-read-time "cl-png" #'png::decode-file file count)
-  (test-read-time "sdl2-image" (lambda (x)
-                                 (sdl2:free-surface
-                                  (sdl2-image:load-image x)))
-                  file count)
-  (test-read-time "cl-soil" (lambda (x)
-                              (cl-soil:free-image-data
-                               (cl-soil:load-image x)))
-                  file count))
+  (test-read-time "cl-png" #'png::decode-file file count))

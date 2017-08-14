@@ -11,9 +11,7 @@
                #:local-time
                #:mediabox-png
                #:opticl
-               #:png
-               #:sdl2-image
-               #:cl-soil)
+               #:png)
   :pathname "src"
   :serial t
   :components
