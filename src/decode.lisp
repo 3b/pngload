@@ -21,8 +21,13 @@
            8))
 
 (defun get-image-bytes ()
-  (with-slots (width height) *png-object*
-    (+ height (* height (get-scanline-bytes width)))))
+  (with-slots (width height interlace-method) *png-object*
+    (ecase interlace-method
+      (:null
+       (+ height (* height (get-scanline-bytes width))))
+      (:adam7
+       (loop for (w h) in (calculate-sub-image-dimensions)
+             sum (* h (1+ (get-scanline-bytes w))))))))
 
 (define-constant +filter-type-none+ 0)
 (define-constant +filter-type-sub+ 1)
