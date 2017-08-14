@@ -10,7 +10,7 @@
   :depends-on (#:alexandria
                #:local-time
                #:mediabox-png
-               #:png-read
+               #:opticl
                #:png
                #:sdl2-image
                #:cl-soil)
