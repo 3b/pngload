@@ -11,7 +11,8 @@
    (palette-count :accessor palette-count
                   :initform 0)
    (palette :accessor palette :initform nil)
-   (transparency :accessor transparency :initform nil)
+   (transparency :accessor transparency
+                 :initform nil)
    (interlace-method :accessor interlace-method)
    (data :accessor data
          :initform nil)))

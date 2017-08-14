@@ -100,7 +100,7 @@
           :when (and (plusp sw) (plusp sh))
             :do (unfilter data sw sh start)
                 (if (< pixel-bits 8)
-                    (add-sub-image/sub-byte dest data pass sw sh
-                                            pixel-bits start)
+                    (add-sub-image/sub-byte dest data pass sw sh pixel-bits
+                                            start)
                     (add-sub-image dest data pass sw sh (/ pixel-bits 8) start))
           :finally (return dest))))

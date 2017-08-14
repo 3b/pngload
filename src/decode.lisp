@@ -26,8 +26,8 @@
       (:null
        (+ height (* height (get-scanline-bytes width))))
       (:adam7
-       (loop for (w h) in (calculate-sub-image-dimensions)
-             sum (* h (1+ (get-scanline-bytes w))))))))
+       (loop :for (width height) :in (calculate-sub-image-dimensions)
+             :sum (* height (1+ (get-scanline-bytes width))))))))
 
 (define-constant +filter-type-none+ 0)
 (define-constant +filter-type-sub+ 1)
@@ -45,8 +45,7 @@
       (when transparency
         (assert (member color-type '(:truecolour :indexed-colour :greyscale)))
         (incf channels))
-      (make-array `(,height ,width
-                            ,@(when (> channels 1) (list channels)))
+      (make-array `(,height ,width ,@(when (> channels 1) (list channels)))
                   :element-type (ecase bit-depth
                                   ((1 2 4 8) 'ub8)
                                   (16 'ub16))))))
@@ -144,8 +143,6 @@
                     (assert (zerop (mod (array-total-size data) 2)))
                     (loop :for d :below (array-total-size image-data)
                           :for s :below (array-total-size data) :by 2
-                          ;; we know array indices are in bounds, so
-                          ;; safety 0 lets us skip bounds checks
                           :do (locally (declare (optimize speed (safety 0)))
                                 (setf (row-major-aref image-data d)
                                       (dpb (aref data s) (byte 8 8)
@@ -153,8 +150,6 @@
                (copy/8 ()
                  `(loop :for d :below (array-total-size image-data)
                         :for s :below (array-total-size data)
-                        ;; we know array indices are in bounds, so
-                        ;; safety 0 lets us skip bounds checks
                         :do (locally (declare (optimize speed (safety 0)))
                               (setf (row-major-aref image-data d)
                                     (aref data s)))))
@@ -187,7 +182,8 @@
                                              0
                                              ,opaque))))))
       (with-slots (width height bit-depth interlace-method color-type
-                   palette transparency) *png-object*
+                   palette transparency)
+          *png-object*
         (setf (data *png-object*) (allocate-image-data))
         (if (eq interlace-method :null)
             (unfilter data width height 0)
@@ -211,8 +207,7 @@
                    ;; used for both 2d and 3d arrays, in case we have
                    ;; a tRNs chunk, so can't declare array rank
                    (declare (ub8a image-data))
-                   (loop :with pixels-per-byte = (/ 8 bit-depth)
-                         :with s = 0  ;; start of row in source
+                   (loop :with s = 0  ;; start of row in source
                          :with x = 0  ;; x coord of current pixel
                          :with bx = 0 ;; offset of byte containing x
                          :with p = 0  ;; pixel in byte
