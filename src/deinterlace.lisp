@@ -62,9 +62,11 @@
                   :for dx :from dx1 :by ddx
                   :do (multiple-value-bind (sxb sxp) (floor sx pixels-per-byte)
                         (multiple-value-bind (dxb dxp) (floor dx pixels-per-byte)
-                          (setf (ldb (byte pixel-bits (- 8 dxp pixel-bits))
+                          (setf (ldb (byte pixel-bits
+                                           (- 8 (* dxp pixel-bits) pixel-bits))
                                      (aref dest (+ dyb dxb)))
-                                (ldb (byte pixel-bits (- 8 sxp pixel-bits))
+                                (ldb (byte pixel-bits
+                                           (- 8 (* sxp pixel-bits) pixel-bits))
                                      (aref source (+ syb sxb)))))))))
 
 (defun add-sub-image (dest source pass w h pixel-bytes start)
