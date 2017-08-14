@@ -168,19 +168,21 @@
                     :with key = (etypecase transparency
                                   (ub16
                                    (make-array 1 :element-type 'ub16
-                                                 :initial-contents transparency))
+                                                 :initial-element transparency))
                                   (ub16a1d
                                    transparency))
-                    :for s :from (* width height c) :downto 0 :by (1- c)
+                    :for s :from (- (* width height (1- c)) (1- c))
+                    :downto 0 :by (1- c)
                     :for d :from (- (array-total-size image-data) c)
                     :downto 0 :by c
                     :do (loop
-                          :for i :below c
+                          :for i :below (1- c)
                           :for k :across key
                           :for v = (row-major-aref image-data (+ s i))
                           :do (setf (row-major-aref image-data (+ d i)) v)
                           :count (= v k) :into matches
-                          :finally (setf (row-major-aref image-data (+ d c))
+                          :collect (list v k matches) into foo
+                          :finally (setf (row-major-aref image-data (+ d (1- c)))
                                          (if (= matches (1- c))
                                              0
                                              ,opaque))))))
@@ -216,7 +218,9 @@
                          :with p = 0  ;; pixel in byte
                          :with b = 0  ;; current byte
                          :with scanline-bytes = (get-scanline-bytes width)
+                         :with ssize = (array-total-size data)
                          :for d :below (array-total-size image-data)
+                         :while (< (+ s bx) ssize)
                          ;; read next byte of pixels from source
                          :when (zerop p)
                            :do (setf b (aref data (+ s bx)))
@@ -248,7 +252,9 @@
                                 (aref palette s 2))
                           (when transparency
                             (setf (row-major-aref image-data (+ d 3))
-                                  (aref transparency s)))))
+                                  (if (array-in-bounds-p transparency s)
+                                      (aref transparency s)
+                                      255)))))
                  (copy/pal/sub ()
                    (loop
                      :with scanline-bytes = (get-scanline-bytes width)
@@ -260,7 +266,7 @@
                            :do (multiple-value-bind (b p)
                                    (floor x pixels-per-byte)
                                  (let ((i (ldb (byte bit-depth
-                                                     (- 8 p bit-depth))
+                                                     (- 8 (* p bit-depth) bit-depth))
                                                (aref data (+ yb b)))))
                                    (setf (aref image-data y x 0)
                                          (aref palette i 0)
@@ -270,7 +276,9 @@
                                          (aref palette i 2))
                                    (when transparency
                                      (setf (aref image-data y x 3)
-                                           (aref transparency i))))))))
+                                           (if (array-in-bounds-p transparency i)
+                                               (aref transparency i)
+                                               255))))))))
                  (trns/16 ()
                    (trns #xffff))
                  (trns/8 ()
