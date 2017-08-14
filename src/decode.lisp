@@ -215,9 +215,8 @@
                          :with bx = 0 ;; offset of byte containing x
                          :with p = 0  ;; pixel in byte
                          :with b = 0  ;; current byte
-                         :with width = (width *png-object*)
                          :with scanline-bytes = (get-scanline-bytes width)
-                         :for d :below (array-total-size image-data) :by pixels-per-byte
+                         :for d :below (array-total-size image-data)
                          ;; read next byte of pixels from source
                          :when (zerop p)
                            :do (setf b (aref data (+ s bx)))
