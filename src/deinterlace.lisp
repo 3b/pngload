@@ -46,8 +46,28 @@
           (list (calc (width *png-object*) +adam7-widths+)
                 (calc (height *png-object*) +adam7-heights+)))))
 
-(defun add-sub-image/sub-byte (dest pass w h image pixel-bits)
-  (error "not done yet"))
+(defun add-sub-image/sub-byte (dest source pass w h pixel-bits start)
+  (loop :with dx1 = (1- (position 1 (aref +adam7-widths+ pass)))
+        :with dy1 = (1- (position 1 (aref +adam7-heights+ pass)))
+        :with ddx = (/ 8 (aref (aref +adam7-widths+ pass) 8))
+        :with ddy = (/ 8 (aref (aref +adam7-heights+ pass) 8))
+        :with ssb = (get-scanline-bytes w)
+        :with dsb = (get-scanline-bytes (width *png-object*))
+        :with pixels-per-byte = (/ 8 pixel-bits)
+        :for sy :below h
+        :for dy :from dy1 :by ddy
+        :for dyb = (* dy dsb)
+        :for syb = (+ start (* sy ssb))
+        :do (loop :for sx :below w
+                  :for dx :from dx1 :by ddx
+                  :do (multiple-value-bind (sxb sxp) (floor sx pixels-per-byte)
+                        (multiple-value-bind (dxb dxp) (floor dx pixels-per-byte)
+                          (setf (ldb (byte pixel-bits
+                                           (- 8 (* dxp pixel-bits) pixel-bits))
+                                     (aref dest (+ dyb dxb)))
+                                (ldb (byte pixel-bits
+                                           (- 8 (* sxp pixel-bits) pixel-bits))
+                                     (aref source (+ syb sxb)))))))))
 
 (defun add-sub-image (dest source pass w h pixel-bytes start)
   (loop :with x1 = (1- (position 1 (aref +adam7-widths+ pass)))
@@ -71,11 +91,12 @@
                                    :element-type 'ub8
                                    :initial-element #xff)
           :for pass :below 7
-          :for start = 0 :then skip
+          :for start = 0 :then next
           :for (sw sh) :in (calculate-sub-image-dimensions)
-          :for skip = (+ start sh (* sh (ceiling (* sw pixel-bits) 8)))
+          :for scanline-bytes = (get-scanline-bytes sw)
+          :for next = (+ start sh (* sh (ceiling (* sw pixel-bits) 8)))
           :do (unfilter data sw sh start)
               (if (< pixel-bits 8)
-                  (add-sub-image/sub-byte dest data pass sw sh pixel-bits)
+                  (add-sub-image/sub-byte dest data pass sw sh pixel-bits start)
                   (add-sub-image dest data pass sw sh (/ pixel-bits 8) start))
           :finally (return dest))))

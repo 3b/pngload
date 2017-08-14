@@ -36,7 +36,8 @@
     (dotimes (entry entry-count)
       (dotimes (sample 3)
         (setf (aref palette-entries entry sample) (read-integer :bytes 1))))
-    (setf (palette-count *png-object*) entry-count)))
+    (setf (palette-count *png-object*) entry-count
+          (palette *png-object*) palette-entries)))
 
 (define-chunk-data (idat) (data)
   (setf data (read-bytes (chunk-size)))
@@ -112,16 +113,21 @@
 (define-chunk-data (trns) (grey red blue green alpha-values)
   (ecase (color-type *png-object*)
     (:greyscale
-     (setf grey (read-integer :bytes 2)))
+     (setf grey (read-integer :bytes 2))
+     (setf (transparency *png-object*) grey))
     (:truecolour
      (setf red (read-integer :bytes 2)
            blue (read-integer :bytes 2)
-           green (read-integer :bytes 2)))
+           green (read-integer :bytes 2))
+     (setf (transparency *png-object*)
+           (make-array 3 :element-type 'ub16
+                         :initial-contents (list red green blue))))
     (:indexed-colour
      (let ((size (chunk-size)))
        (setf alpha-values (make-array size :element-type 'ub8))
        (dotimes (i size)
-         (setf (aref alpha-values i) (read-integer :bytes 1)))))))
+         (setf (aref alpha-values i) (read-integer :bytes 1)))
+       (setf (transparency *png-object*) alpha-values)))))
 
 (define-chunk-data (phys) (pixels-per-unit-x pixels-per-unit-y unit-specifier)
   (setf pixels-per-unit-x (read-integer :bytes 4)
