@@ -1,18 +1,18 @@
 (in-package :cl-user)
 
-(defpackage #:mediabox-png.test
+(defpackage #:pngload.test
   (:use #:cl
-        #:mediabox-png)
+        #:pngload)
   (:export #:test-images
            #:test-read-times))
 
-(in-package :mediabox-png.test)
+(in-package :pngload.test)
 
 (defvar *failed* nil)
 
 (defun get-path ()
   (uiop:ensure-directory-pathname
-   (asdf:system-relative-pathname :mediabox-png "test")))
+   (asdf:system-relative-pathname :pngload "test")))
 
 (defun get-image-name (file)
   (namestring
@@ -28,12 +28,12 @@
              (let ((image (ignore-errors (load-file file)))
                    (opticl (opticl:read-image-file file)))
                (unless (and image
-                            (equalp (mediabox-png::data image)
+                            (equalp (pngload::data image)
                                     opticl))
                  (push (get-image-name file) *failed*)
                  (format t "~&~s: ~s vs ~s~%"
                          (get-image-name file)
-                         (when image (array-dimensions (mediabox-png::data image)))
+                         (when image (array-dimensions (pngload::data image)))
                          (array-dimensions opticl))))))
       (map nil #'test-image files)
       (format t "Passed (~D)" (- (length files) (length *failed*)))
@@ -50,6 +50,6 @@
              start))))
 
 (defun test-read-times (file &key (count 1))
-  (test-read-time "mediabox-png" #'load-file file count)
+  (test-read-time "pngload" #'load-file file count)
   (test-read-time "opticl" #'opticl:read-image-file file count)
   (test-read-time "cl-png" #'png::decode-file file count))

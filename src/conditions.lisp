@@ -1,4 +1,4 @@
-(in-package :mediabox-png)
+(in-package :pngload)
 
 (define-condition png-warning (warning) ())
 

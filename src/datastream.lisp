@@ -1,4 +1,4 @@
-(in-package :mediabox-png)
+(in-package :pngload)
 
 (defclass datastream ()
   ((signature :reader signature)

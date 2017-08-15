@@ -1,4 +1,4 @@
-(in-package :mediabox-png)
+(in-package :pngload)
 
 (defmacro define-chunk-data ((name) slots &body body)
   (with-gensyms (chunk-name chunk-data)

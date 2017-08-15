@@ -1,6 +1,6 @@
 (in-package :cl-user)
 
-(defpackage #:mediabox-png
+(defpackage #:pngload
   (:use #:cl
         #:alexandria
         #:fast-io)

@@ -1,4 +1,4 @@
-(in-package :mediabox-png)
+(in-package :pngload)
 
 (defvar *png-object* nil)
 
