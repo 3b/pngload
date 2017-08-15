@@ -42,8 +42,8 @@ the code away from its original cleanliness in favor of performance.
 
 - Stores data in a format that is expected of
   [opticl](https://github.com/slyrus/opticl), to make transitioning to `pngload`
-  easier in the future. It's author has expressed interest in replacing or at
-  least adding `pngload` as an optional backend.
+  easier and faster in the future. Its author has expressed interest in
+  replacing or at least adding `pngload` as an optional backend.
 
 ## Install
 
