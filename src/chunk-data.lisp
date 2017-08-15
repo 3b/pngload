@@ -40,19 +40,21 @@
           (palette *png-object*) palette-entries)))
 
 (define-chunk-data (idat) (data)
-  (setf data (read-bytes (chunk-size)))
-  (push data (data *png-object*)))
+  (when *decode-data*
+    (setf data (read-bytes (chunk-size)))
+    (push data (data *png-object*))))
 
 (define-chunk-data (iend) ()
-  (loop :with data = (reverse (data *png-object*))
-        :with dstate = (chipz:make-dstate 'chipz:zlib)
-        :with out = (make-array (get-image-bytes) :element-type 'ub8)
-        :for part :in data
-        :for start = 0 :then (+ start written)
-        :for (read written) = (multiple-value-list
-                               (chipz:decompress out dstate part
-                                                 :output-start start))
-        :finally (setf (data *png-object*) out)))
+  (when *decode-data*
+    (loop :with data = (reverse (data *png-object*))
+          :with dstate = (chipz:make-dstate 'chipz:zlib)
+          :with out = (make-array (get-image-bytes) :element-type 'ub8)
+          :for part :in data
+          :for start = 0 :then (+ start written)
+          :for (read written) = (multiple-value-list
+                                 (chipz:decompress out dstate part
+                                                   :output-start start))
+          :finally (setf (data *png-object*) out))))
 
 (define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x
                                          green-y blue-x blue-y)

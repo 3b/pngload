@@ -9,7 +9,8 @@
     (with-slots (signature chunks) datastream
       (setf signature (parse-signature)
             chunks (parse-all-chunks)))
-    (decode)
+    (when *decode-data*
+      (decode))
     datastream))
 
 (defun parse-signature ()

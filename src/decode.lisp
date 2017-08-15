@@ -1,5 +1,7 @@
 (in-package :mediabox-png)
 
+(defvar *decode-data* nil)
+
 (defun get-channel-count ()
   (ecase (color-type *png-object*)
     (:truecolour 3)
