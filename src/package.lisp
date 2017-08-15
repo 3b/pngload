@@ -6,8 +6,6 @@
         #:fast-io)
   (:export #:load-file
            #:load-stream
-           #:write-file
-           #:write-stream
            #:width
            #:height
            #:bit-depth
