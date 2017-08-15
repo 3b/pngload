@@ -17,12 +17,12 @@
    (data :accessor data
          :initform nil)))
 
-(defun read-png-stream (stream)
+(defun load-stream (stream)
   (with-fast-input (*buffer* nil stream)
     (let ((*png-object* (make-instance 'png-object)))
       (setf (parse-tree *png-object*) (parse-datastream))
       *png-object*)))
 
-(defun read-png-file (path)
+(defun load-file (path)
   (with-open-file (in path :element-type 'ub8)
-    (read-png-stream in)))
+    (load-stream in)))

@@ -25,7 +25,7 @@
   (let ((*failed*)
         (files (uiop:directory-files (get-path))))
     (flet ((test-image (file)
-             (let ((image (ignore-errors (read-png-file file)))
+             (let ((image (ignore-errors (load-file file)))
                    (opticl (opticl:read-image-file file)))
                (unless (and image
                             (equalp (mediabox-png::data image)
@@ -50,6 +50,6 @@
              start))))
 
 (defun test-read-times (file &key (count 1))
-  (test-read-time "mediabox-png" #'read-png-file file count)
+  (test-read-time "mediabox-png" #'load-file file count)
   (test-read-time "opticl" #'opticl:read-image-file file count)
   (test-read-time "cl-png" #'png::decode-file file count))

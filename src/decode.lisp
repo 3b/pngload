@@ -29,11 +29,12 @@
        (loop :for (width height) :in (calculate-sub-image-dimensions)
              :sum (* height (1+ (get-scanline-bytes width))))))))
 
-(define-constant +filter-type-none+ 0)
-(define-constant +filter-type-sub+ 1)
-(define-constant +filter-type-up+ 2)
-(define-constant +filter-type-average+ 3)
-(define-constant +filter-type-paeth+ 4)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (define-constant +filter-type-none+ 0)
+  (define-constant +filter-type-sub+ 1)
+  (define-constant +filter-type-up+ 2)
+  (define-constant +filter-type-average+ 3)
+  (define-constant +filter-type-paeth+ 4))
 
 (defun allocate-image-data ()
   (with-slots (width height color-type bit-depth transparency) *png-object*
