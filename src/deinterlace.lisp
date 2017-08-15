@@ -31,11 +31,6 @@
     #(0 0 1 1 2 2 3 3 4))
   :test #'equalp)
 
-(defun interlace-method-name (interlace-method)
-  (case interlace-method
-    (0 :null)
-    (1 :adam7)))
-
 (defun calculate-sub-image-dimensions ()
   (loop :for pass :below 7
         :collect

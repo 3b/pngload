@@ -29,11 +29,7 @@
                    (opticl (opticl:read-image-file file)))
                (unless (and image
                             (equalp (data image) opticl))
-                 (push (get-image-name file) *failed*)
-                 (format t "~&~s: ~s vs ~s~%"
-                         (get-image-name file)
-                         (when image (array-dimensions (data image)))
-                         (array-dimensions opticl))))))
+                 (push (get-image-name file) *failed*)))))
       (map nil #'test-image files)
       (format t "Passed (~D)" (- (length files) (length *failed*)))
       (format t "~&Failed (~D): ~A" (length *failed*) *failed*))))

@@ -19,6 +19,7 @@
   :components
   ((:file "package")
    (:file "common")
+   (:file "properties")
    (:file "conditions")
    (:file "chunk")
    (:file "chunk-data")

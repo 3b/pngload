@@ -7,13 +7,25 @@
    (width :accessor width)
    (height :accessor height)
    (bit-depth :accessor bit-depth)
-   (color-type :accessor color-type)
+   (color-type :reader color-type)
    (palette-count :accessor palette-count
                   :initform 0)
    (palette :accessor palette :initform nil)
+   (gamma :reader gamma
+          :initform 1.0)
    (transparency :accessor transparency
                  :initform nil)
-   (interlace-method :accessor interlace-method)
+   (rendering-intent :reader rendering-intent
+                     :initform nil)
+   (compression-method :reader compression-method)
+   (interlace-method :reader interlace-method)
+   (filter-method :reader filter-method)
+   (pixel-size :reader pixel-size
+               :initform (list :x 1 :y 1 :unit :unknown))
+   (last-modified :reader last-modified
+                  :initform nil)
+   (text :reader text
+         :initform nil)
    (data :accessor data
          :initform nil)))
 

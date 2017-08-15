@@ -27,8 +27,10 @@
   (setf (width *png-object*) width
         (height *png-object*) height
         (bit-depth *png-object*) bit-depth
-        (color-type *png-object*) (colour-type-name colour-type)
-        (interlace-method *png-object*) (interlace-method-name interlace-method)))
+        (color-type) colour-type
+        (compression-method) compression-method
+        (interlace-method) interlace-method
+        (filter-method) filter-method))
 
 (define-chunk-data (plte) (palette-entries)
   (let ((entry-count (/ (chunk-size) 3)))
@@ -68,7 +70,8 @@
         blue-y (read-integer :bytes 4)))
 
 (define-chunk-data (gama) (image-gamma)
-  (setf image-gamma (read-integer :bytes 4)))
+  (setf image-gamma (read-integer :bytes 4))
+  (setf (gamma) image-gamma))
 
 (define-chunk-data (iccp) (profile-name compression-method compressed-profile)
   (setf profile-name (read-string :bytes 79 :nullp t)
@@ -93,7 +96,8 @@
            alpha (read-integer :bytes 1)))))
 
 (define-chunk-data (srgb) (rendering-intent)
-  (setf rendering-intent (read-integer :bytes 1)))
+  (setf rendering-intent (read-integer :bytes 1)
+        (rendering-intent) rendering-intent))
 
 (define-chunk-data (bkgd) (greyscale red green blue palette-index)
   (case (color-type *png-object*)
@@ -134,7 +138,8 @@
 (define-chunk-data (phys) (pixels-per-unit-x pixels-per-unit-y unit-specifier)
   (setf pixels-per-unit-x (read-integer :bytes 4)
         pixels-per-unit-y (read-integer :bytes 4)
-        unit-specifier (read-integer :bytes 1)))
+        unit-specifier (read-integer :bytes 1)
+        (pixel-size) (list pixels-per-unit-x pixels-per-unit-y unit-specifier)))
 
 (define-chunk-data (splt) (palette-name sample-depth palette-entries)
   (setf palette-name (read-string :bytes 79 :nullp t)
@@ -156,7 +161,8 @@
         day (read-integer :bytes 1)
         hour (read-integer :bytes 1)
         minute (read-integer :bytes 1)
-        second (read-integer :bytes 1)))
+        second (read-integer :bytes 1)
+        (last-modified) (list year month day hour minute second)))
 
 (define-chunk-data (itxt) (keyword compression-flag compression-method
                                    language-tag translated-keyword text)
@@ -166,16 +172,19 @@
         language-tag (read-string :nullp t)
         translated-keyword (read-string :nullp t :encoding :utf-8)
         text (read-string :encoding :utf-8
-                          :deflatep (when (= compression-flag 1) t))))
+                          :deflatep (when (= compression-flag 1) t))
+        (text) (list keyword text language-tag translated-keyword)))
 
 (define-chunk-data (text) (keyword text-string)
   (setf keyword (read-string :bytes 79 :nullp t)
-        text-string (read-string)))
+        text-string (read-string)
+        (text) (list keyword text-string)))
 
 (define-chunk-data (ztxt) (keyword compression-method compressed-text-datastream)
   (setf keyword (read-string :bytes 79 :nullp t)
         compression-method (read-integer :bytes 1)
-        compressed-text-datastream (read-string :deflatep t)))
+        compressed-text-datastream (read-string :deflatep t)
+        (text) (list keyword compressed-text-datastream)))
 
 (define-chunk-data (unknown) ()
   (warn 'unknown-chunk-detected))

@@ -34,14 +34,6 @@
     (#x7a545874 :ztxt)
     (otherwise :unknown)))
 
-(defun colour-type-name (colour-type)
-  (ecase colour-type
-    (0 :greyscale)
-    (2 :truecolour)
-    (3 :indexed-colour)
-    (4 :greyscale-alpha)
-    (6 :truecolour-alpha)))
-
 (defun chunk-size ()
   (chunk-length *chunk*))
 
