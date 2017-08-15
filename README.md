@@ -45,6 +45,9 @@ the code away from its original cleanliness in favor of performance.
   easier and faster in the future. Its author has expressed interest in
   replacing or at least adding `pngload` as an optional backend.
 
+- Can parse only the metadata if desired, and skip decoding, in order to quickly
+  retrieve information about an image without actually decoding it.
+
 ## Install
 
 ``` lisp
@@ -72,7 +75,8 @@ Both `LOAD-FILE` and `LOAD-STREAM` accept an optional keyword argument, which
 can be used to disable the slow process of decoding the image data. This can be
 used to very quickly get information about the file, including but not limited
 to, the dimensions, last modification date, or palette information. Image data
-will be unavilable with this option, obviously. To use this fast reading method:
+will be unavailable with this option, obviously. To use this fast reading
+method:
 
 ```lisp
 (pngload:load-file #p"/path/to/file.png" :decodep nil)
