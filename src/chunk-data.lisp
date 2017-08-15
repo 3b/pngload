@@ -177,8 +177,5 @@
         compression-method (read-integer :bytes 1)
         compressed-text-datastream (read-string :deflatep t)))
 
-(define-chunk-data (exif) ()
-  (warn 'draft-chunk-detected :chunk-type :exif))
-
 (define-chunk-data (unknown) ()
   (warn 'unknown-chunk-detected))
