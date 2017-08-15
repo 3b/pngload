@@ -7,4 +7,13 @@
   (:export #:load-file
            #:load-stream
            #:write-file
-           #:write-stream))
+           #:write-stream
+           #:width
+           #:height
+           #:bit-depth
+           #:color-type
+           #:palette-count
+           #:palette
+           #:transparency
+           #:interlace-method
+           #:data))

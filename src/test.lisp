@@ -28,12 +28,11 @@
              (let ((image (ignore-errors (load-file file)))
                    (opticl (opticl:read-image-file file)))
                (unless (and image
-                            (equalp (pngload::data image)
-                                    opticl))
+                            (equalp (data image) opticl))
                  (push (get-image-name file) *failed*)
                  (format t "~&~s: ~s vs ~s~%"
                          (get-image-name file)
-                         (when image (array-dimensions (pngload::data image)))
+                         (when image (array-dimensions (data image)))
                          (array-dimensions opticl))))))
       (map nil #'test-image files)
       (format t "Passed (~D)" (- (length files) (length *failed*)))
