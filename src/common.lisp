@@ -12,7 +12,9 @@
 (deftype ub16a2d () '(simple-array ub16 (* *)))
 (deftype ub16a3d () '(simple-array ub16 (* * *)))
 
-(defvar *buffer* nil)
+(defvar *buffer*)
+(defvar *decode-data*)
+(defvar *png-object*)
 
 (defun get-path ()
   (let ((stream (fast-io::input-buffer-stream *buffer*)))

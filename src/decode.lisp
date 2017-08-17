@@ -1,7 +1,5 @@
 (in-package :pngload)
 
-(defvar *decode-data* nil)
-
 (defun get-image-bytes ()
   (with-slots (width height interlace-method) *png-object*
     (ecase interlace-method
