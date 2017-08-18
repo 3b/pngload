@@ -1,7 +1,5 @@
 (in-package :pngload)
 
-(defvar *png-object* nil)
-
 (defclass png-object ()
   ((parse-tree :accessor parse-tree)
    (width :accessor width)
