@@ -60,3 +60,34 @@
          (when (and ,png-var (data ,png-var))
            (static-vectors:free-static-vector (data ,png-var))
            (setf (data ,png-var) nil))))))
+
+(defun make-grey-map (depth)
+  (assert (< depth 8))
+  (let ((n (expt 2 depth)))
+    (make-array n :element-type '(unsigned-byte 8)
+                    :initial-contents
+                    (loop for i below n
+                          collect (floor (+ (/ (* i 255) (1- n)) 1/2))))))
+
+(defun expand-gray (png)
+  (with-slots (width height bit-depth transparency color-type) png
+    (when (and (member color-type '(:greyscale :greyscale-alpha))
+               (< bit-depth 8))
+      (let* ((*png-object* png)
+             (channels (get-image-channels))
+             (grey-channels (- channels (if transparency 1 0)))
+             (data (data png))
+             (stride (* width channels)))
+        (flet ((data (y x c)
+                 (row-major-aref data (+ (* y stride) (* x channels) c)))
+               ((setf data) (v y x c)
+                 (setf (row-major-aref data (+ (* y stride) (* x channels) c))
+                       v)))
+          (loop with map = (make-grey-map bit-depth)
+                for y below height
+                do (loop for x below width
+                         do (loop for c below grey-channels
+                                  for g = (data y x c)
+                                  do (setf (data y x c)
+                                           (aref map g)))))))))
+  png)
