@@ -273,16 +273,16 @@
       (macrolet ((f (&key (opt t))
                    `(loop
                       :for y1 :below (floor h 2)
-                      :for y2 :downfrom (1- h) above 0
+                      :for y2 :downfrom (1- h) :above 0
                       :do (loop :for x1 :from (* y1 stride) :below end
                                 :for x2 :from (* y2 stride) :below end
                                 :repeat stride
-                                :do (,@ (if opt
-                                            '(locally (declare (optimize speed
-                                                                (safety 0))))
-                                            '(progn))
-                                      (rotatef (row-major-aref image x1)
-                                               (row-major-aref image x2)))))))
+                                :do (,@(if opt
+                                           '(locally (declare (optimize speed
+                                                               (safety 0))))
+                                           '(progn))
+                                     (rotatef (row-major-aref image x1)
+                                              (row-major-aref image x2)))))))
         (typecase image
           (ub8a3d (f))
           (ub8a2d (f))

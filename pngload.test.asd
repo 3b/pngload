@@ -11,7 +11,7 @@
   :depends-on (#:alexandria
                #:local-time
                #:opticl
-               #:png
+               #:png-read
                #:pngload)
   :pathname "src"
   :serial t
