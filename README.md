@@ -17,7 +17,10 @@ What makes `pngload` different than `png-read`?
 `png-read` 0.95 [1] seconds to load an image that takes `cl-png` (A CFFI wrapper
 for libpng) 0.028s. `pngload` takes 0.145s.
 
-[1] Note that I recently applied some SBCL-specific compiler optimizations to `png-read`, so this figure will be lower on SBCL once it is pushed in the next Quicklisp dist release. Still though, `pngload` is approximately 2.5-5x faster, depending on the image type.
+[1] Note that I recently applied some SBCL-specific compiler optimizations to
+`png-read`, so this figure will be lower on SBCL once it is pushed in the next
+Quicklisp dist release. Still though, `pngload` is approximately 2.5-5x faster,
+depending on the image type.
 
 ### Cleaner code
 
@@ -25,7 +28,7 @@ for libpng) 0.028s. `pngload` takes 0.145s.
 than `png-read`, even after adding lots of type declarations and restructuring
 the code away from its original cleanliness in favor of performance.
 
-### Full support for all chunks.
+### Full support for all chunks
 
 The entire concrete syntax tree is parsed, and is visible as a slot in the
 returned `PNG-OBJECT` object when decoding an image. `png-read` does not support
@@ -41,7 +44,7 @@ Able to load all images in [PNGSuite](http://www.schaik.com/pngsuite/)
 correctly. `png-read` claims that it can load them all, but they were not
 checked for validity.
 
-### Stores data in a format that is expected of [opticl](https://github.com/slyrus/opticl).
+### Stores data in a format that is expected by [opticl](https://github.com/slyrus/opticl)
 
 Makes transitioning to `pngload` easier and faster in the future. Its author has
 expressed interest in replacing or at least adding `pngload` as an optional
