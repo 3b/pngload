@@ -1,7 +1,7 @@
 (in-package :pngload)
 
 (defvar *decode-data* nil)
-(defvar *flattenp* nil)
+(defvar *flatten* nil)
 
 (defun get-image-bytes ()
   (with-slots (width height interlace-method) *png-object*
@@ -12,6 +12,19 @@
        (loop :for (width height) :in (calculate-sub-image-dimensions)
              :sum (* height (1+ (get-scanline-bytes width))))))))
 
+(defun get-image-channels ()
+  (with-slots (color-type transparency) *png-object*
+    (let ((channels (ecase color-type
+                      ((:truecolour :indexed-colour) 3)
+                      (:truecolour-alpha 4)
+                      (:greyscale-alpha 2)
+                      (:greyscale 1))))
+      (when transparency
+        (assert (member color-type
+                        '(:truecolour :indexed-colour :greyscale)))
+        (incf channels))
+      channels)))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (define-constant +filter-type-none+ 0)
   (define-constant +filter-type-sub+ 1)
@@ -21,16 +34,9 @@
 
 (defun allocate-image-data ()
   (with-slots (width height color-type bit-depth transparency) *png-object*
-    (let ((channels (ecase color-type
-                      ((:truecolour :indexed-colour) 3)
-                      (:truecolour-alpha 4)
-                      (:greyscale-alpha 2)
-                      (:greyscale 1))))
-      (when transparency
-        (assert (member color-type '(:truecolour :indexed-colour :greyscale)))
-        (incf channels))
+    (let ((channels (get-image-channels)))
       (make-array
-       (if *flattenp*
+       (if *flatten*
            (* width height channels)
            `(,height ,width ,@(when (> channels 1) (list channels))))
        :element-type (ecase bit-depth
@@ -134,7 +140,7 @@
             (,1d-fn-sym ()
               (declare (,1d-type-sym data))
               (,copy-fn-sym)))
-       (if *flattenp*
+       (if *flatten*
            (,1d-fn-sym)
            (,nd-fn-sym)))))
 
@@ -156,45 +162,55 @@
 
 (defun copy/pal/8 (image-data)
   (with-slots (data palette transparency) *png-object*
-    (declare (ub8a3d data))
-    (loop :with c = (array-dimension data 2)
-          :for d :below (array-total-size data) :by c
-          :for s :across image-data
-          :do  (setf (row-major-aref data (+ d 0))
-                     (aref palette s 0)
-                     (row-major-aref data (+ d 1))
-                     (aref palette s 1)
-                     (row-major-aref data (+ d 2))
-                     (aref palette s 2))
-               (when transparency
-                 (setf (row-major-aref data (+ d 3))
-                       (if (array-in-bounds-p transparency s)
-                           (aref transparency s)
-                           255))))))
+    (macrolet ((copy ()
+                 `(loop :with c = (get-image-channels)
+                        :for d :below (array-total-size data) :by c
+                        :for s :across image-data
+                        :do  (setf (row-major-aref data (+ d 0))
+                                   (aref palette s 0)
+                                   (row-major-aref data (+ d 1))
+                                   (aref palette s 1)
+                                   (row-major-aref data (+ d 2))
+                                   (aref palette s 2))
+                             (when transparency
+                               (setf (row-major-aref data (+ d 3))
+                                     (if (array-in-bounds-p transparency s)
+                                         (aref transparency s)
+                                         255))))))
+      (if *flatten*
+          (locally (declare (ub8a1d data)) (copy))
+          (locally (declare (ub8a3d data)) (copy))))))
 
 (defun copy/pal/sub (image-data)
   (with-slots (width height bit-depth palette transparency data) *png-object*
     (loop :with scanline-bytes = (get-scanline-bytes width)
           :with pixels-per-byte = (/ 8 bit-depth)
+          :with channels = (get-image-channels)
+          :with dstride = (* width channels)
           :for y :below height
           :for yb = (* y scanline-bytes)
-          :do (loop :for x :below width
-                    :do (multiple-value-bind (b p)
-                            (floor x pixels-per-byte)
-                          (let ((i (ldb (byte bit-depth
-                                              (- 8 (* p bit-depth) bit-depth))
-                                        (aref image-data (+ yb b)))))
-                            (setf (aref data y x 0)
-                                  (aref palette i 0)
-                                  (aref data y x 1)
-                                  (aref palette i 1)
-                                  (aref data y x 2)
-                                  (aref palette i 2))
-                            (when transparency
-                              (setf (aref data y x 3)
-                                    (if (array-in-bounds-p transparency i)
-                                        (aref transparency i)
-                                        255)))))))))
+          :do (flet (((setf data) (v y x c)
+                       (setf (row-major-aref data (+ (* y dstride)
+                                                     (* x channels)
+                                                     c))
+                             v)))
+                (loop :for x :below width
+                      :do (multiple-value-bind (b p)
+                              (floor x pixels-per-byte)
+                            (let ((i (ldb (byte bit-depth
+                                                (- 8 (* p bit-depth) bit-depth))
+                                          (aref image-data (+ yb b)))))
+                              (setf (data y x 0)
+                                    (aref palette i 0)
+                                    (data y x 1)
+                                    (aref palette i 1)
+                                    (data y x 2)
+                                    (aref palette i 2))
+                              (when transparency
+                                (setf (data y x 3)
+                                      (if (array-in-bounds-p transparency i)
+                                          (aref transparency i)
+                                          255))))))))))
 
 (defun copy/2d/sub (image-data)
   (with-slots (width bit-depth data) *png-object*
@@ -225,7 +241,7 @@
                  (incf bx 1))))))
 
 (defmacro trns (opaque)
-  `(loop :with c = (array-dimension data 2)
+  `(loop :with c = (get-image-channels)
          :with key = (etypecase transparency
                        (ub16 (make-array 1 :element-type 'ub16
                                            :initial-element transparency))
@@ -242,6 +258,35 @@
                                   (if (= matches (1- c))
                                       0
                                       ,opaque)))))
+
+(defun flip (image)
+  (let ((w (width *png-object*))
+        (h (height *png-object*))
+        (c (get-image-channels)))
+    (let ((stride (* w c))
+          (end (array-total-size image)))
+      (assert (plusp stride))
+      (macrolet ((f (&key (opt t))
+                   `(loop
+                      :for y1 :below (floor h 2)
+                      :for y2 :downfrom (1- h) above 0
+                      :do (loop :for x1 :from (* y1 stride) :below end
+                                :for x2 :from (* y2 stride) :below end
+                                :repeat stride
+                                :do (,@ (if opt
+                                            '(locally (declare (optimize speed
+                                                                (safety 0))))
+                                            '(progn))
+                                      (rotatef (row-major-aref image x1)
+                                               (row-major-aref image x2)))))))
+        (typecase image
+          (ub8a3d (f))
+          (ub8a2d (f))
+          (ub8a1d (f))
+          (ub16a3d (f))
+          (ub16a2d (f))
+          (ub16a1d (f))
+          (t (f :opt nil)))))))
 
 (defun decode ()
   (let ((image-data (data *png-object*)))
@@ -263,21 +308,27 @@
          (when transparency
            (ecase bit-depth
              (8 (trns #xff))
-             (16 (trns #xffff)))))
+             (16 (trns #xffff))))
+         (when *flip-y* ;; todo: include flip in copy/8,copy/16,trns
+           (flip data)))
         (:greyscale
          (if transparency
              (ecase bit-depth
                (8 (maybe-flatten 3 8) (trns #xff))
                (16 (maybe-flatten 3 16) (trns #xffff))
                ((1 2 4)
-                (copy/2d/sub image-data) ; TODO: maybe-flatten this
+                (copy/2d/sub image-data)
                 (trns #xff)))
              (ecase bit-depth
                (8 (maybe-flatten 2 8))
                (16 (maybe-flatten 2 16))
-               ((1 2 4) (copy/2d/sub image-data))))) ; TODO maybe-flatten this
+               ((1 2 4) (copy/2d/sub image-data))))
+         (when *flip-y*
+           (flip data)))
         (:indexed-colour
          (ecase bit-depth
-           (8 (copy/pal/8 image-data)) ; TODO: maybe-flatten this
-           ((1 2 4) (copy/pal/sub image-data)))))) ; TODO: maybe-flatten this
+           (8 (copy/pal/8 image-data))
+           ((1 2 4) (copy/pal/sub image-data)))
+         (when *flip-y*
+           (flip data)))))
     *png-object*))
