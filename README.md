@@ -11,7 +11,7 @@ there shall be a choice.
 
 What makes `pngload` different than `png-read`?
 
-- Speed
+### Speed
 
 `png-read` is very slow. For a simple test on modern hardware, it takes
 `png-read` 0.95 [1] seconds to load an image that takes `cl-png` (A CFFI wrapper
@@ -19,40 +19,49 @@ for libpng) 0.028s. `pngload` takes 0.145s.
 
 [1] Note that I recently applied some SBCL-specific compiler optimizations to `png-read`, so this figure will be lower on SBCL once it is pushed in the next Quicklisp dist release. Still though, `pngload` is approximately 2.5-5x faster, depending on the image type.
 
-- Cleaner code
+### Cleaner code
 
 `pngload` should be a lot more hackable, and have more of an educational value
 than `png-read`, even after adding lots of type declarations and restructuring
 the code away from its original cleanliness in favor of performance.
 
-- Full support for all chunks.
+### Full support for all chunks.
 
-The entire concrete syntax tree is parsed, and is
-  visible as a slot in the returned `PNG-OBJECT` object when decoding an image.
-  `png-read` does not support some of these. Additionally, human-readable
-  formats are stored outside of the parse tree in the top-level object. For
-  instance, if a chunk specifying gamma correction is parsed, this will be
-  stored as a floating-point value, rather than multiplied by 100,000 and
-  stored as an integer. Again, the raw data is stored in the `PARSE-TREE` slot
-  of the returned object, should you ever need more.
+The entire concrete syntax tree is parsed, and is visible as a slot in the
+returned `PNG-OBJECT` object when decoding an image. `png-read` does not support
+some of these. Additionally, human-readable formats are stored outside of the
+parse tree in the top-level object. For instance, if a chunk specifying gamma
+correction is parsed, this will be stored as a floating-point value, rather than
+multiplied by 100,000 and stored as an integer. Again, the raw data is stored in
+the `PARSE-TREE` slot of the returned object, should you ever need more.
 
-- Fully conforming with the PNG specification
+### Fully conforming with the PNG specification
 
-Able to load all images in
-  [PNGSuite](http://www.schaik.com/pngsuite/) correctly. `png-read` claims that
-  it can load them all, but they were not checked for validity.
+Able to load all images in [PNGSuite](http://www.schaik.com/pngsuite/)
+correctly. `png-read` claims that it can load them all, but they were not
+checked for validity.
 
-- Stores data in a format that is expected of
-  [opticl](https://github.com/slyrus/opticl).
-  
-  Makes transitioning to `pngload`
-  easier and faster in the future. Its author has expressed interest in
-  replacing or at least adding `pngload` as an optional backend.
+### Stores data in a format that is expected of [opticl](https://github.com/slyrus/opticl).
 
-- Metadata only
+Makes transitioning to `pngload` easier and faster in the future. Its author has
+expressed interest in replacing or at least adding `pngload` as an optional
+backend.
 
-Can parse only the metadata if desired, and skip decoding, in order to quickly
-  retrieve information about an image without actually decoding it.
+### Optionally decode metadata only
+
+Can optionally parse only the metadata, skipping decoding completely, in order
+to quickly retrieve information about an image.
+
+### Optionally flip the Y axis
+
+Can optionally flip the Y axis, for when the origin is expected to be at the
+bottom left instead of the top left, as with OpenGL texture rendering.
+
+### Optionally write to foreign memory
+
+Can optionally write to foreign memory using `static-vectors`. This is useful
+when needing to efficiently pass a pointer to the image data with a foreign
+library, such as OpenGL.
 
 ## Install
 
@@ -85,14 +94,28 @@ will be unavailable with this option, obviously. To use this fast reading
 method:
 
 ```lisp
-(pngload:load-file #p"/path/to/file.png" :decodep nil)
+(pngload:load-file #p"/path/to/file.png" :decode nil)
 ```
 
 or:
 
 ```lisp
-(pngload:load-stream stream :decodep nil)
+(pngload:load-stream stream :decode nil)
 ```
+
+Additionally, both `LOAD-FILE` and `LOAD-STREAM` may take the following keyword
+arguments:
+
+`FLATTEN` when non-NIL, will decode the image data to a 1-dimensional array,
+rather than the default method which is to be compatible with `opticl`.
+
+`FLIP-Y` when non-NIL, will flip the pixels on the Y axis, for when the origin
+is expected to be at the bottom/left instead of the top/left.
+
+`STATIC-VECTOR` when non-NIL, will decode to foreign memory. It is up to the
+user to free memory when you are done. Alternatively, you can use
+`WITH-PNG-IN-STATIC-VECTOR` which will automatically free the memory for you.
+
 
 ## License
 

@@ -45,7 +45,7 @@
 (defmacro with-png-in-static-vector ((png-var path-or-stream
                                       &key (decode t) flip-y)
                                      &body body)
-  (alexandria:once-only (path-or-stream)
+  (once-only (path-or-stream)
     `(let ((,png-var (if (streamp ,path-or-stream)
                          (load-stream ,path-or-stream :decode ,decode
                                                       :flip-y ,flip-y
