@@ -12,22 +12,22 @@ there shall be a choice.
 What makes `pngload` different than `png-read`?
 
 - Speed
+
 `png-read` is very slow. For a simple test on modern hardware, it takes
-`png-read` 0.95 seconds to load an image that takes `cl-png` (A CFFI wrapper
-for libpng) 0.028s. Before writing `pngload` I took to trying to optimize
-`png-read`'s code, and I had mild success. For the more common RGB and RGBA
-images, I was able to increase performance by about 2.5 to 3 times. Still pretty
-slow, but acceptable. What was not acceptable to me, was how ugly the codebase
-was, so I abandoned the thought of trying any further. `pngload` is over 6 times
-faster than `png-read` before my optimization attempts on it, and about 2.5
-times afterwards, using SBCL 1.3.19.
+`png-read` 0.95 [1] seconds to load an image that takes `cl-png` (A CFFI wrapper
+for libpng) 0.028s. `pngload` takes 0.145s.
+
+[1] Note that I recently applied some SBCL-specific compiler optimizations to `png-read`, so this figure will be lower on SBCL once it is pushed in the next Quicklisp dist release. Still though, `pngload` is approximately 2.5-5x faster, depending on the image type.
 
 - Cleaner code
+
 `pngload` should be a lot more hackable, and have more of an educational value
 than `png-read`, even after adding lots of type declarations and restructuring
 the code away from its original cleanliness in favor of performance.
 
-- Full support for all chunks. The entire concrete syntax tree is parsed, and is
+- Full support for all chunks.
+
+The entire concrete syntax tree is parsed, and is
   visible as a slot in the returned `PNG-OBJECT` object when decoding an image.
   `png-read` does not support some of these. Additionally, human-readable
   formats are stored outside of the parse tree in the top-level object. For
@@ -36,16 +36,22 @@ the code away from its original cleanliness in favor of performance.
   stored as an integer. Again, the raw data is stored in the `PARSE-TREE` slot
   of the returned object, should you ever need more.
 
-- Fully conformant with the PNG specification, and able to load all images in
+- Fully conforming with the PNG specification
+
+Able to load all images in
   [PNGSuite](http://www.schaik.com/pngsuite/) correctly. `png-read` claims that
   it can load them all, but they were not checked for validity.
 
 - Stores data in a format that is expected of
-  [opticl](https://github.com/slyrus/opticl), to make transitioning to `pngload`
+  [opticl](https://github.com/slyrus/opticl).
+  
+  Makes transitioning to `pngload`
   easier and faster in the future. Its author has expressed interest in
   replacing or at least adding `pngload` as an optional backend.
 
-- Can parse only the metadata if desired, and skip decoding, in order to quickly
+- Metadata only
+
+Can parse only the metadata if desired, and skip decoding, in order to quickly
   retrieve information about an image without actually decoding it.
 
 ## Install
