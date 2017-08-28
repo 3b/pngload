@@ -27,15 +27,36 @@
    (data :accessor data
          :initform nil)))
 
-(defun load-stream (stream &key (decode t) flatten flip-y)
+(defun load-stream (stream &key (decode t) flatten flip-y static-vector)
   (with-fast-input (*buffer* nil stream)
     (let ((*png-object* (make-instance 'png-object))
           (*decode-data* decode)
           (*flatten* flatten)
-          (*flip-y* flip-y))
+          (*flip-y* flip-y)
+          (*use-static-vector* static-vector))
       (setf (parse-tree *png-object*) (parse-datastream))
       *png-object*)))
 
-(defun load-file (path &key (decode t) flatten flip-y)
+(defun load-file (path &key (decode t) flatten flip-y static-vector)
   (with-open-file (in path :element-type 'ub8)
-    (load-stream in :decode decode :flatten flatten :flip-y flip-y)))
+    (load-stream in :decode decode :flatten flatten :flip-y flip-y
+                 :static-vector static-vector)))
+
+(defmacro with-png-in-static-vector ((png-var path-or-stream
+                                      &key (decode t) flip-y)
+                                     &body body)
+  (alexandria:once-only (path-or-stream)
+    `(let ((,png-var (if (streamp ,path-or-stream)
+                         (load-stream ,path-or-stream :decode ,decode
+                                                      :flip-y ,flip-y
+                                                      :static-vector t
+                                                      :flatten t)
+                         (load-file ,path-or-stream :decode ,decode
+                                                    :flip-y ,flip-y
+                                                    :static-vector t
+                                                    :flatten t))))
+       (unwind-protect
+            (progn ,@body)
+         (when (and ,png-var (data ,png-var))
+           (static-vectors:free-static-vector (data ,png-var))
+           (setf (data ,png-var) nil))))))

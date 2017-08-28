@@ -34,14 +34,18 @@
 
 (defun allocate-image-data ()
   (with-slots (width height color-type bit-depth transparency) *png-object*
-    (let ((channels (get-image-channels)))
-      (make-array
-       (if *flatten*
-           (* width height channels)
-           `(,height ,width ,@(when (> channels 1) (list channels))))
-       :element-type (ecase bit-depth
-                       ((1 2 4 8) 'ub8)
-                       (16 'ub16))))))
+    (let* ((channels (get-image-channels))
+           (args (list (if *flatten*
+                           (* width height channels)
+                           `(,height ,width ,@(when (> channels 1)
+                                                (list channels))))
+                       :element-type (ecase bit-depth
+                                       ((1 2 4 8) 'ub8)
+                                       (16 'ub16)))))
+      (when *use-static-vector* (assert *flatten*))
+      (if *use-static-vector*
+          (apply #'static-vectors:make-static-vector args)
+          (apply #'make-array args)))))
 
 (declaim (inline unfilter-sub))
 (defun unfilter-sub (x data start pixel-bytes)

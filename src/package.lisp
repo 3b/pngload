@@ -21,4 +21,5 @@
            #:pixel-size
            #:last-modified
            #:text
-           #:data))
+           #:data
+           #:with-png-in-static-vector))
