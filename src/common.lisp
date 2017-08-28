@@ -16,6 +16,7 @@
 (defvar *decode-data*)
 (defvar *png-object*)
 (defvar *flip-y*)
+(defvar *use-static-vector*)
 
 (defun get-path ()
   (let ((stream (fast-io::input-buffer-stream *buffer*)))
