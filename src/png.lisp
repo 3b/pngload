@@ -29,13 +29,14 @@
    (data :accessor data
          :initform nil)))
 
-(defun load-stream (stream &key (decodep t))
+(defun load-stream (stream &key (decodep t) flattenp)
   (with-fast-input (*buffer* nil stream)
     (let ((*png-object* (make-instance 'png-object))
-          (*decode-data* decodep))
+          (*decode-data* decodep)
+          (*flattenp* flattenp))
       (setf (parse-tree *png-object*) (parse-datastream))
       *png-object*)))
 
-(defun load-file (path &key (decodep t))
+(defun load-file (path &key (decodep t) flattenp)
   (with-open-file (in path :element-type 'ub8)
-    (load-stream in :decodep decodep)))
+    (load-stream in :decodep decodep :flattenp flattenp)))

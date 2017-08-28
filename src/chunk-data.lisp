@@ -4,8 +4,7 @@
   (with-gensyms (chunk-name chunk-data)
     (let ((class-name (symbolicate 'chunk-data- name)))
       `(progn
-         (defclass ,class-name ()
-           ,(loop :for slot :in slots :collect slot))
+         (defclass ,class-name () ,slots)
          (defmethod parse-chunk-data ((,chunk-name (eql ,(make-keyword name))))
            (let ((,chunk-data (make-instance ',class-name)))
              (with-slots ,slots ,chunk-data
