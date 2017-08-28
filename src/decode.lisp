@@ -299,40 +299,41 @@
                  data)
         *png-object*
       (if (eq interlace-method :null)
-          (unfilter data width height 0)
+          (unfilter image-data width height 0)
           (setf image-data (deinterlace-adam7 image-data)))
       (assert (and (typep bit-depth 'ub8)
                    (member bit-depth '(1 2 4 8 16))))
       (setf data (allocate-image-data))
-      (ecase color-type
-        ((:truecolour :truecolour-alpha :greyscale-alpha)
-         (ecase bit-depth
-           (8 (maybe-flatten 3 8))
-           (16 (maybe-flatten 3 16)))
-         (when transparency
+      (let ((data data))
+        (ecase color-type
+          ((:truecolour :truecolour-alpha :greyscale-alpha)
            (ecase bit-depth
-             (8 (trns #xff))
-             (16 (trns #xffff))))
-         (when *flip-y* ;; todo: include flip in copy/8,copy/16,trns
-           (flip data)))
-        (:greyscale
-         (if transparency
+             (8 (maybe-flatten 3 8))
+             (16 (maybe-flatten 3 16)))
+           (when transparency
              (ecase bit-depth
-               (8 (maybe-flatten 3 8) (trns #xff))
-               (16 (maybe-flatten 3 16) (trns #xffff))
-               ((1 2 4)
-                (copy/2d/sub image-data)
-                (trns #xff)))
-             (ecase bit-depth
-               (8 (maybe-flatten 2 8))
-               (16 (maybe-flatten 2 16))
-               ((1 2 4) (copy/2d/sub image-data))))
-         (when *flip-y*
-           (flip data)))
-        (:indexed-colour
-         (ecase bit-depth
-           (8 (copy/pal/8 image-data))
-           ((1 2 4) (copy/pal/sub image-data)))
-         (when *flip-y*
-           (flip data)))))
+               (8 (trns #xff))
+               (16 (trns #xffff))))
+           (when *flip-y* ;; todo: include flip in copy/8,copy/16,trns
+             (flip data)))
+          (:greyscale
+           (if transparency
+               (ecase bit-depth
+                 (8 (maybe-flatten 3 8) (trns #xff))
+                 (16 (maybe-flatten 3 16) (trns #xffff))
+                 ((1 2 4)
+                  (copy/2d/sub image-data)
+                  (trns #xff)))
+               (ecase bit-depth
+                 (8 (maybe-flatten 2 8))
+                 (16 (maybe-flatten 2 16))
+                 ((1 2 4) (copy/2d/sub image-data))))
+           (when *flip-y*
+             (flip data)))
+          (:indexed-colour
+           (ecase bit-depth
+             (8 (copy/pal/8 image-data))
+             ((1 2 4) (copy/pal/sub image-data)))
+           (when *flip-y*
+             (flip data))))))
     *png-object*))
