@@ -55,6 +55,10 @@ backend.
 Can optionally parse only the metadata, skipping decoding completely, in order
 to quickly retrieve information about an image.
 
+### Optionally decode as 1-dimensional array
+
+Instead of decoding to a format which is compatible with `opticl`.
+
 ### Optionally flip the Y axis
 
 Can optionally flip the Y axis, for when the origin is expected to be at the
