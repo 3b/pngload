@@ -75,7 +75,7 @@
                    (when *break-on-failure*
                      (break "~s failed~@[: ~s~] ~s" (get-image-name file)
                             error
-                            (pngload:color-type image)
+                            (and image (pngload:color-type image))
                             image ref))
                    (push (get-image-name file) *failed*))))))
       (map nil #'test-image files)
@@ -83,7 +83,7 @@
       (when (or flip flatten)
         (format t " (options: flip ~s, flatten ~s)~%" flip flatten))
       (format t "~&Passed (~d)" (- (length files) (length *failed*)))
-      (format t "~&Failed (~d) ~@[: ~]" (length *failed*) *failed*)
+      (format t "~&Failed (~d)~@[: ~s~]" (length *failed*) *failed*)
       (list (- (length files) (length *failed*))
             (length *failed*)))))
 

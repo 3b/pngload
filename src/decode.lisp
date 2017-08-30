@@ -12,13 +12,17 @@
        (loop :for (width height) :in (calculate-sub-image-dimensions)
              :sum (* height (1+ (get-scanline-bytes width))))))))
 
+(defun get-image-raw-channels ()
+  (with-slots (color-type) *png-object*
+    (ecase color-type
+      ((:truecolour :indexed-colour) 3)
+      (:truecolour-alpha 4)
+      (:greyscale-alpha 2)
+      (:greyscale 1))))
+
 (defun get-image-channels ()
   (with-slots (color-type transparency) *png-object*
-    (let ((channels (ecase color-type
-                      ((:truecolour :indexed-colour) 3)
-                      (:truecolour-alpha 4)
-                      (:greyscale-alpha 2)
-                      (:greyscale 1))))
+    (let ((channels (get-image-raw-channels)))
       (when transparency
         (assert (member color-type
                         '(:truecolour :indexed-colour :greyscale)))
@@ -136,14 +140,19 @@
   (let ((nd-fn-sym (intern (format nil "COPY/~dD/~d" dims bit-depth)))
         (1d-fn-sym (intern (format nil "COPY/1D/~d" bit-depth)))
         (copy-fn-sym (intern (format nil "COPY/~d" bit-depth)))
+        (copy-flip-fn-sym (intern (format nil "COPY/~d/FLIP" bit-depth)))
         (nd-type-sym (intern (format nil "UB~dA~dD" bit-depth dims)))
         (1d-type-sym (intern (format nil "UB~dA1D" bit-depth))))
     `(flet ((,nd-fn-sym ()
               (declare (,nd-type-sym data))
-              (,copy-fn-sym))
+              (if *flip-y*
+                  (,copy-flip-fn-sym)
+                  (,copy-fn-sym)))
             (,1d-fn-sym ()
               (declare (,1d-type-sym data))
-              (,copy-fn-sym)))
+              (if *flip-y*
+                  (,copy-flip-fn-sym)
+                  (,copy-fn-sym))))
        (if *flatten*
            (,1d-fn-sym)
            (,nd-fn-sym)))))
@@ -155,6 +164,29 @@
                (setf (row-major-aref data d)
                      (aref image-data s)))))
 
+(defmacro copy/8/flip ()
+  `(with-slots (width height bit-depth) *png-object*
+     (let* ((channels (get-image-raw-channels))
+            (stride (* channels width))
+            (ssize (array-total-size image-data))
+            (dsize (array-total-size data)))
+       (declare (fixnum ssize dsize)
+                (type (unsigned-byte 34) stride))
+       (loop
+         :for dy :below height
+         :for sy :downfrom (1- height)
+         :for d1 := (* dy stride)
+         :for s1 := (* sy stride)
+         :do (assert (<= 0 (+ d1 stride) dsize))
+             (assert (<= 0 (+ s1 stride) ssize))
+             (locally (declare (optimize speed))
+               (loop :for s fixnum :from s1 :below ssize
+                     :for d fixnum :from d1 :below dsize
+                     :repeat stride
+                     :do (locally (declare (optimize speed (safety 0)))
+                           (setf (row-major-aref data d)
+                                 (aref image-data s)))))))))
+
 (defmacro copy/16 ()
   `(progn (assert (zerop (mod (array-total-size image-data) 2)))
           (loop :for d :below (array-total-size data)
@@ -163,6 +195,30 @@
                       (setf (row-major-aref data d)
                             (dpb (aref image-data s) (byte 8 8)
                                  (aref image-data (1+ s))))))))
+
+(defmacro copy/16/flip ()
+  `(with-slots (width height bit-depth) *png-object*
+     (let* ((channels (get-image-raw-channels))
+            (stride (* channels width))
+            (ssize (array-total-size image-data))
+            (dsize (array-total-size data)))
+       (declare (fixnum ssize dsize)
+                (type (unsigned-byte 34) stride))
+       (loop
+         :for dy :below height
+         :for sy :downfrom (1- height)
+         :for d1 := (* dy stride)
+         :for s1 := (* sy stride 2)
+         :do (assert (<= 0 (+ d1 stride) dsize))
+             (assert (<= 0 (+ s1 stride stride) ssize))
+             (locally (declare (optimize speed))
+               (loop :for s fixnum :from s1 :below ssize :by 2
+                     :for d fixnum :from d1 :below dsize
+                     :repeat stride
+                     :do (locally (declare (optimize speed (safety 0)))
+                           (setf (row-major-aref data d)
+                                 (dpb (aref image-data s) (byte 8 8)
+                                      (aref image-data (1+ s)))))))))))
 
 (defun copy/pal/8 (image-data)
   (with-slots (data palette transparency) *png-object*
@@ -292,6 +348,10 @@
           (ub16a1d (f))
           (t (f :opt nil)))))))
 
+(defun maybe-flip (data)
+  (when *flip-y*
+    (flip data)))
+
 (defun decode ()
   (let ((image-data (data *png-object*)))
     (declare (ub8a1d image-data))
@@ -313,9 +373,7 @@
            (when transparency
              (ecase bit-depth
                (8 (trns #xff))
-               (16 (trns #xffff))))
-           (when *flip-y* ;; todo: include flip in copy/8,copy/16,trns
-             (flip data)))
+               (16 (trns #xffff)))))
           (:greyscale
            (if transparency
                (ecase bit-depth
@@ -323,17 +381,15 @@
                  (16 (maybe-flatten 3 16) (trns #xffff))
                  ((1 2 4)
                   (copy/2d/sub image-data)
-                  (trns #xff)))
+                  (trns #xff)
+                  (maybe-flip data)))
                (ecase bit-depth
                  (8 (maybe-flatten 2 8))
                  (16 (maybe-flatten 2 16))
-                 ((1 2 4) (copy/2d/sub image-data))))
-           (when *flip-y*
-             (flip data)))
+                 ((1 2 4) (copy/2d/sub image-data) (maybe-flip data)))))
           (:indexed-colour
            (ecase bit-depth
              (8 (copy/pal/8 image-data))
              ((1 2 4) (copy/pal/sub image-data)))
-           (when *flip-y*
-             (flip data))))))
+           (maybe-flip data)))))
     *png-object*))
