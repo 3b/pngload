@@ -1,5 +1,5 @@
 (asdf:defsystem #:pngload
-  :description "A reader and writer for the PNG image format."
+  :description "A reader for the PNG image format."
   :author ("Michael Fiano <michael.fiano@gmail.com>"
            "Bart Botta <00003b@gmail.com>")
   :maintainer "Michael Fiano <michael.fiano@gmail.com>"
