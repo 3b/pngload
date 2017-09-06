@@ -11,9 +11,7 @@
   :encoding :utf-8
   :long-description #.(uiop:read-file-string (uiop/pathname:subpathname *load-pathname* "README.md"))
   :depends-on (#:alexandria
-               #:fast-io
-               #:babel
-               #:chipz)
+               #:parsley)
   :pathname "src"
   :serial t
   :components

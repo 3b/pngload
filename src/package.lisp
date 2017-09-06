@@ -3,7 +3,8 @@
 (defpackage #:pngload
   (:use #:cl
         #:alexandria
-        #:fast-io)
+        #:fast-io
+        #:parsley)
   (:export #:load-file
            #:load-stream
            #:width

@@ -19,7 +19,7 @@
    (interlace-method :reader interlace-method)
    (filter-method :reader filter-method)
    (pixel-size :reader pixel-size
-               :initform (list :x 1 :y 1 :unit :unknown))
+               :initform '(:x 1 :y 1 :unit :unknown))
    (last-modified :reader last-modified
                   :initform nil)
    (text :reader text
@@ -28,7 +28,7 @@
          :initform nil)))
 
 (defun load-stream (stream &key (decode t) flatten flip-y static-vector)
-  (with-fast-input (*buffer* nil stream)
+  (with-fast-input (*byte-buffer* nil stream)
     (let ((*png-object* (make-instance 'png-object))
           (*decode-data* decode)
           (*flatten* flatten)

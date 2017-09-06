@@ -38,13 +38,13 @@
   (chunk-length *chunk*))
 
 (defun chunk-offset ()
-  (- (chunk-length *chunk*) (buffer-position *buffer*)))
+  (- (chunk-length *chunk*) (buffer-position *byte-buffer*)))
 
 (defun parse-chunk ()
   (let ((*chunk* (make-instance 'chunk)))
     (with-slots (length type data crc) *chunk*
-      (setf length (read-integer :bytes 4)
-            type (read-integer :bytes 4)
+      (setf length (read-uint-be 4)
+            type (read-uint-be 4)
             data (parse-chunk-data (chunk-name *chunk*))
-            crc (read-integer :bytes 4)))
+            crc (read-uint-be 4)))
     *chunk*))
