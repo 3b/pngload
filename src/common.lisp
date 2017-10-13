@@ -19,7 +19,7 @@
 (defvar *use-static-vector*)
 
 (defun get-path ()
-  (let ((stream (fast-io::input-buffer-stream *byte-buffer*)))
+  (let ((stream (buffer-stream)))
     (typecase stream
       (file-stream (pathname stream))
       (t :IN-MEMORY))))

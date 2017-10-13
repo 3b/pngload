@@ -8,7 +8,7 @@
          (defmethod parse-chunk-data ((,chunk-name (eql ,(make-keyword name))))
            (let ((,chunk-data (make-instance ',class-name)))
              (with-slots ,slots ,chunk-data
-               (with-fast-input (*byte-buffer* (read-bytes (chunk-size)))
+               (with-buffer-read (:sequence (read-bytes (chunk-size)))
                  ,@body))
              ,chunk-data))))))
 
@@ -74,7 +74,7 @@
 
 (define-chunk-data (iccp) (profile-name compression-method compressed-profile)
   (setf profile-name (read-string :bytes 79 :encoding :latin-1
-                                  :null-terminated t)
+                                  :null-terminated-p t)
         compression-method (read-uint-be 1)
         compressed-profile (read-bytes (chunk-offset)
                                        :processor #'uncompress-zlib)))
@@ -144,7 +144,7 @@
 
 (define-chunk-data (splt) (palette-name sample-depth palette-entries)
   (setf palette-name (read-string :bytes 79 :encoding :latin-1
-                                  :null-terminated t)
+                                  :null-terminated-p t)
         sample-depth (read-uint-be 1))
   (let* ((entry-bytes (ecase sample-depth (8 6) (16 10)))
          (sample-bytes (/ sample-depth 8))
@@ -168,23 +168,23 @@
 
 (define-chunk-data (itxt) (keyword compression-flag compression-method
                                    language-tag translated-keyword text)
-  (setf keyword (read-string :bytes 79 :encoding :latin-1 :null-terminated t)
+  (setf keyword (read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
         compression-flag (read-uint-be 1)
         compression-method (read-uint-be 1)
-        language-tag (read-string :encoding :latin-1 :null-terminated t)
-        translated-keyword (read-string :encoding :utf-8 :null-terminated t))
+        language-tag (read-string :encoding :latin-1 :null-terminated-p t)
+        translated-keyword (read-string :encoding :utf-8 :null-terminated-p t))
   (if (= compression-flag 1)
       (setf text (read-string :encoding :utf-8 :processor #'uncompress-zlib))
       (setf text (read-string :encoding :utf-8)))
   (setf (text) (list keyword text language-tag translated-keyword)))
 
 (define-chunk-data (text) (keyword text-string)
-  (setf keyword (read-string :bytes 79 :encoding :latin-1 :null-terminated t)
+  (setf keyword (read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
         text-string (read-string :encoding :latin-1)
         (text) (list keyword text-string)))
 
 (define-chunk-data (ztxt) (keyword compression-method compressed-text-datastream)
-  (setf keyword (read-string :bytes 79 :encoding :latin-1 :null-terminated t)
+  (setf keyword (read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
         compression-method (read-uint-be 1)
         compressed-text-datastream (read-string :encoding :latin-1
                                                 :processor #'uncompress-zlib)

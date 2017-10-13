@@ -28,7 +28,7 @@
          :initform nil)))
 
 (defun load-stream (stream &key (decode t) flatten flip-y static-vector)
-  (with-fast-input (*byte-buffer* nil stream)
+  (with-buffer-read (:stream stream)
     (let ((*png-object* (make-instance 'png-object))
           (*decode-data* decode)
           (*flatten* flatten)

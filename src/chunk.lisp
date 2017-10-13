@@ -38,7 +38,7 @@
   (chunk-length *chunk*))
 
 (defun chunk-offset ()
-  (- (chunk-length *chunk*) (buffer-position *byte-buffer*)))
+  (- (chunk-length *chunk*) (buffer-position)))
 
 (defun parse-chunk ()
   (let ((*chunk* (make-instance 'chunk)))
