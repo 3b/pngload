@@ -37,7 +37,9 @@ FLATTEN: When non-NIL, read the image data into a 1-dimensional array.
 FLIP-Y: When non-NIL, flip the image data on its Y axis while reading.
 
 STATIC-VECTOR: When non-NIL, read the image data into a static-vectors array, suitable to be passed
-to a foreign library."
+to a foreign library.
+
+See LOAD-FILE if you want to load a PNG datastream from a file on disk."
   (with-buffer-read (:stream stream)
     (let ((*png-object* (make-instance 'png-object))
           (*decode-data* decode)
@@ -58,12 +60,19 @@ FLIP-Y: When non-NIL, flip the image data on its Y axis while reading.
 
 STATIC-VECTOR: When non-NIL, read the image data into a static-vectors array, suitable to be passed
 to a foreign library.
+
+See LOAD-STREAM if you want to load a PNG datastream.
 "
   (with-open-file (in path :element-type 'ub8)
     (load-stream in :decode decode :flatten flatten :flip-y flip-y
                  :static-vector static-vector)))
 
 (defmacro with-png-in-static-vector ((png-var path-or-stream &key (decode t) flip-y) &body body)
+  "Load a PNG image to a foreign array using static-vectors, automatically freeing memory when
+finished.
+
+See LOAD-STREAM
+See LOAD-FILE"
   (once-only (path-or-stream)
     `(let ((,png-var (if (streamp ,path-or-stream)
                          (load-stream ,path-or-stream :decode ,decode

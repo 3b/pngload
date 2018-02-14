@@ -41,8 +41,8 @@ that it can load them all, but they were not checked for validity.
 
 ### Stores data in a format that is expected by [opticl](https://github.com/slyrus/opticl)
 
-Opticl has supported pngload since its first release, which gives you faster PNG loading
-automatically if you were already using Opticl.
+opticl has supported pngload since its first release, which gives you faster PNG loading
+automatically if you were already using opticl.
 
 ### Optionally decode metadata only
 
@@ -51,7 +51,7 @@ information about an image.
 
 ### Optionally decode as a 1-dimensional array
 
-Instead of decoding to a format which is compatible with Opticl. This is useful for OpenGL texture
+Instead of decoding to a format which is compatible with opticl. This is useful for OpenGL texture
 uploading.
 
 ### Optionally flip the Y axis
@@ -106,7 +106,7 @@ or:
 Additionally, both `LOAD-FILE` and `LOAD-STREAM` may take the following keyword arguments:
 
 `FLATTEN` when non-NIL, will decode the image data to a 1-dimensional array, rather than the default
-method which is to be compatible with Opticl.
+method which is to be compatible with opticl.
 
 `FLIP-Y` when non-NIL, will flip the pixels on the Y axis, for when the origin is expected to be at
 the bottom/left instead of the top/left.
