@@ -14,8 +14,8 @@
     datastream))
 
 (defun parse-signature ()
-  (let ((signature (read-bytes 8)))
-    (if (octets= signature '(137 80 78 71 13 10 26 10))
+  (let ((signature (parsley:read-bytes 8)))
+    (if (parsley:octets= signature '(137 80 78 71 13 10 26 10))
         signature
         (error 'invalid-png-stream))))
 

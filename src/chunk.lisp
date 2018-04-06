@@ -38,13 +38,13 @@
   (chunk-length *chunk*))
 
 (defun chunk-offset ()
-  (- (chunk-length *chunk*) (buffer-position)))
+  (- (chunk-length *chunk*) (parsley:buffer-position)))
 
 (defun parse-chunk ()
   (let ((*chunk* (make-instance 'chunk)))
     (with-slots (length type data crc) *chunk*
-      (setf length (read-uint-be 4)
-            type (read-uint-be 4)
+      (setf length (parsley:read-uint-be 4)
+            type (parsley:read-uint-be 4)
             data (parse-chunk-data (chunk-name *chunk*))
-            crc (read-uint-be 4)))
+            crc (parsley:read-uint-be 4)))
     *chunk*))

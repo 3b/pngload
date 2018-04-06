@@ -1,6 +1,6 @@
 (in-package :pngload)
 
-(define-constant +adam7-pattern+
+(alexandria:define-constant +adam7-pattern+
   #2a((1 6 4 6 2 6 4 6)
       (7 7 7 7 7 7 7 7)
       (5 6 5 6 5 6 5 6)
@@ -11,24 +11,24 @@
       (7 7 7 7 7 7 7 7))
   :test #'equalp)
 
-(define-constant +adam7-widths+
-  #(#(0 1 1 1 1 1 1 1 1)
-    #(0 0 0 0 0 1 1 1 1)
-    #(0 1 1 1 1 2 2 2 2)
-    #(0 0 0 1 1 1 1 2 2)
-    #(0 1 1 2 2 3 3 4 4)
-    #(0 0 1 1 2 2 3 3 4)
-    #(0 1 2 3 4 5 6 7 8))
+(alexandria:define-constant +adam7-widths+
+    #(#(0 1 1 1 1 1 1 1 1)
+      #(0 0 0 0 0 1 1 1 1)
+      #(0 1 1 1 1 2 2 2 2)
+      #(0 0 0 1 1 1 1 2 2)
+      #(0 1 1 2 2 3 3 4 4)
+      #(0 0 1 1 2 2 3 3 4)
+      #(0 1 2 3 4 5 6 7 8))
   :test #'equalp)
 
-(define-constant +adam7-heights+
-  #(#(0 1 1 1 1 1 1 1 1)
-    #(0 1 1 1 1 1 1 1 1)
-    #(0 0 0 0 0 1 1 1 1)
-    #(0 1 1 1 1 2 2 2 2)
-    #(0 0 0 1 1 1 1 2 2)
-    #(0 1 1 2 2 3 3 4 4)
-    #(0 0 1 1 2 2 3 3 4))
+(alexandria:define-constant +adam7-heights+
+    #(#(0 1 1 1 1 1 1 1 1)
+      #(0 1 1 1 1 1 1 1 1)
+      #(0 0 0 0 0 1 1 1 1)
+      #(0 1 1 1 1 2 2 2 2)
+      #(0 0 0 1 1 1 1 2 2)
+      #(0 1 1 2 2 3 3 4 4)
+      #(0 0 1 1 2 2 3 3 4))
   :test #'equalp)
 
 (defun calculate-sub-image-dimensions ()
@@ -57,11 +57,9 @@
                   :for dx :from dx1 :by ddx
                   :do (multiple-value-bind (sxb sxp) (floor sx pixels-per-byte)
                         (multiple-value-bind (dxb dxp) (floor dx pixels-per-byte)
-                          (setf (ldb (byte pixel-bits
-                                           (- 8 (* dxp pixel-bits) pixel-bits))
+                          (setf (ldb (byte pixel-bits (- 8 (* dxp pixel-bits) pixel-bits))
                                      (aref dest (+ dyb dxb)))
-                                (ldb (byte pixel-bits
-                                           (- 8 (* sxp pixel-bits) pixel-bits))
+                                (ldb (byte pixel-bits (- 8 (* sxp pixel-bits) pixel-bits))
                                      (aref source (+ syb sxb)))))))))
 
 (defun add-sub-image (dest source pass w h pixel-bytes start)
@@ -95,7 +93,6 @@
           :when (and (plusp sw) (plusp sh))
             :do (unfilter data sw sh start)
                 (if (< pixel-bits 8)
-                    (add-sub-image/sub-byte dest data pass sw sh pixel-bits
-                                            start)
+                    (add-sub-image/sub-byte dest data pass sw sh pixel-bits start)
                     (add-sub-image dest data pass sw sh (/ pixel-bits 8) start))
           :finally (return dest))))

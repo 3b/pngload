@@ -1,9 +1,7 @@
 (in-package :cl-user)
 
 (defpackage #:pngload
-  (:use #:cl
-        #:alexandria
-        #:parsley)
+  (:use #:cl)
   (:export #:load-file
            #:load-stream
            #:width

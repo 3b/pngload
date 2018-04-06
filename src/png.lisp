@@ -40,7 +40,7 @@ STATIC-VECTOR: When non-NIL, read the image data into a static-vectors array, su
 to a foreign library.
 
 See LOAD-FILE if you want to load a PNG datastream from a file on disk."
-  (with-buffer-read (:stream stream)
+  (parsley:with-buffer-read (:stream stream)
     (let ((*png-object* (make-instance 'png-object))
           (*decode-data* decode)
           (*flatten* flatten)
@@ -64,8 +64,7 @@ to a foreign library.
 See LOAD-STREAM if you want to load a PNG datastream.
 "
   (with-open-file (in path :element-type 'ub8)
-    (load-stream in :decode decode :flatten flatten :flip-y flip-y
-                 :static-vector static-vector)))
+    (load-stream in :decode decode :flatten flatten :flip-y flip-y :static-vector static-vector)))
 
 (defmacro with-png-in-static-vector ((png-var path-or-stream &key (decode t) flip-y) &body body)
   "Load a PNG image to a foreign array using static-vectors, automatically freeing memory when
@@ -73,7 +72,7 @@ finished.
 
 See LOAD-STREAM
 See LOAD-FILE"
-  (once-only (path-or-stream)
+  (alexandria:once-only (path-or-stream)
     `(let ((,png-var (if (streamp ,path-or-stream)
                          (load-stream ,path-or-stream :decode ,decode
                                                       :flip-y ,flip-y
@@ -94,8 +93,8 @@ See LOAD-FILE"
   (let ((n (expt 2 depth)))
     (make-array n :element-type '(unsigned-byte 8)
                   :initial-contents
-                  (loop for i below n
-                        collect (floor (+ (/ (* i 255) (1- n)) 1/2))))))
+                  (loop :for i :below n
+                        :collect (floor (+ (/ (* i 255) (1- n)) 1/2))))))
 
 (defun expand-gray (png)
   (with-slots (width height bit-depth transparency color-type) png
@@ -109,13 +108,12 @@ See LOAD-FILE"
         (flet ((data (y x c)
                  (row-major-aref data (+ (* y stride) (* x channels) c)))
                ((setf data) (v y x c)
-                 (setf (row-major-aref data (+ (* y stride) (* x channels) c))
-                       v)))
-          (loop with map = (make-grey-map bit-depth)
-                for y below height
-                do (loop for x below width
-                         do (loop for c below grey-channels
-                                  for g = (data y x c)
-                                  do (setf (data y x c)
-                                           (aref map g)))))))))
+                 (setf (row-major-aref data (+ (* y stride) (* x channels) c)) v)))
+          (loop :with map = (make-grey-map bit-depth)
+                :for y :below height
+                :do (loop :for x :below width
+                          :do (loop :for c :below grey-channels
+                                    :for g = (data y x c)
+                                    :do (setf (data y x c)
+                                              (aref map g)))))))))
   png)

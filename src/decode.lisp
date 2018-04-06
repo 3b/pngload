@@ -24,25 +24,23 @@
   (with-slots (color-type transparency) *png-object*
     (let ((channels (get-image-raw-channels)))
       (when transparency
-        (assert (member color-type
-                        '(:truecolour :indexed-colour :greyscale)))
+        (assert (member color-type '(:truecolour :indexed-colour :greyscale)))
         (incf channels))
       channels)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (define-constant +filter-type-none+ 0)
-  (define-constant +filter-type-sub+ 1)
-  (define-constant +filter-type-up+ 2)
-  (define-constant +filter-type-average+ 3)
-  (define-constant +filter-type-paeth+ 4))
+  (alexandria:define-constant +filter-type-none+ 0)
+  (alexandria:define-constant +filter-type-sub+ 1)
+  (alexandria:define-constant +filter-type-up+ 2)
+  (alexandria:define-constant +filter-type-average+ 3)
+  (alexandria:define-constant +filter-type-paeth+ 4))
 
 (defun allocate-image-data ()
   (with-slots (width height color-type bit-depth transparency) *png-object*
     (let* ((channels (get-image-channels))
            (args (list (if *flatten*
                            (* width height channels)
-                           `(,height ,width ,@(when (> channels 1)
-                                                (list channels))))
+                           `(,height ,width ,@(when (> channels 1) (list channels))))
                        :element-type (ecase bit-depth
                                        ((1 2 4 8) 'ub8)
                                        (16 'ub16)))))
@@ -131,8 +129,7 @@
                   :for xo fixnum :from left-start
                   :for x fixnum :below scanline-bytes
                   :for sample = (aref data xs)
-                  :for out = (unfilter-byte filter x y data left-start up-start
-                                            pixel-bytes)
+                  :for out = (unfilter-byte filter x y data left-start up-start pixel-bytes)
                   :do (setf (aref data xo)
                             (ldb (byte 8 0) (+ sample out))))))
 
@@ -172,20 +169,19 @@
             (dsize (array-total-size data)))
        (declare (fixnum ssize dsize)
                 (type (unsigned-byte 34) stride))
-       (loop
-         :for dy :below height
-         :for sy :downfrom (1- height)
-         :for d1 := (* dy stride)
-         :for s1 := (* sy stride)
-         :do (assert (<= 0 (+ d1 stride) dsize))
-             (assert (<= 0 (+ s1 stride) ssize))
-             (locally (declare (optimize speed))
-               (loop :for s fixnum :from s1 :below ssize
-                     :for d fixnum :from d1 :below dsize
-                     :repeat stride
-                     :do (locally (declare (optimize speed (safety 0)))
-                           (setf (row-major-aref data d)
-                                 (aref image-data s)))))))))
+       (loop :for dy :below height
+             :for sy :downfrom (1- height)
+             :for d1 := (* dy stride)
+             :for s1 := (* sy stride)
+             :do (assert (<= 0 (+ d1 stride) dsize))
+                 (assert (<= 0 (+ s1 stride) ssize))
+                 (locally (declare (optimize speed))
+                   (loop :for s fixnum :from s1 :below ssize
+                         :for d fixnum :from d1 :below dsize
+                         :repeat stride
+                         :do (locally (declare (optimize speed (safety 0)))
+                               (setf (row-major-aref data d)
+                                     (aref image-data s)))))))))
 
 (defmacro copy/16 ()
   `(progn (assert (zerop (mod (array-total-size image-data) 2)))
@@ -204,21 +200,20 @@
             (dsize (array-total-size data)))
        (declare (fixnum ssize dsize)
                 (type (unsigned-byte 34) stride))
-       (loop
-         :for dy :below height
-         :for sy :downfrom (1- height)
-         :for d1 := (* dy stride)
-         :for s1 := (* sy stride 2)
-         :do (assert (<= 0 (+ d1 stride) dsize))
-             (assert (<= 0 (+ s1 stride stride) ssize))
-             (locally (declare (optimize speed))
-               (loop :for s fixnum :from s1 :below ssize :by 2
-                     :for d fixnum :from d1 :below dsize
-                     :repeat stride
-                     :do (locally (declare (optimize speed (safety 0)))
-                           (setf (row-major-aref data d)
-                                 (dpb (aref image-data s) (byte 8 8)
-                                      (aref image-data (1+ s)))))))))))
+       (loop :for dy :below height
+             :for sy :downfrom (1- height)
+             :for d1 := (* dy stride)
+             :for s1 := (* sy stride 2)
+             :do (assert (<= 0 (+ d1 stride) dsize))
+                 (assert (<= 0 (+ s1 stride stride) ssize))
+                 (locally (declare (optimize speed))
+                   (loop :for s fixnum :from s1 :below ssize :by 2
+                         :for d fixnum :from d1 :below dsize
+                         :repeat stride
+                         :do (locally (declare (optimize speed (safety 0)))
+                               (setf (row-major-aref data d)
+                                     (dpb (aref image-data s) (byte 8 8)
+                                          (aref image-data (1+ s)))))))))))
 
 (defun copy/pal/8 (image-data)
   (with-slots (data palette transparency) *png-object*
@@ -250,15 +245,10 @@
           :for y :below height
           :for yb = (* y scanline-bytes)
           :do (flet (((setf data) (v y x c)
-                       (setf (row-major-aref data (+ (* y dstride)
-                                                     (* x channels)
-                                                     c))
-                             v)))
+                       (setf (row-major-aref data (+ (* y dstride) (* x channels) c)) v)))
                 (loop :for x :below width
-                      :do (multiple-value-bind (b p)
-                              (floor x pixels-per-byte)
-                            (let ((i (ldb (byte bit-depth
-                                                (- 8 (* p bit-depth) bit-depth))
+                      :do (multiple-value-bind (b p) (floor x pixels-per-byte)
+                            (let ((i (ldb (byte bit-depth (- 8 (* p bit-depth) bit-depth))
                                           (aref image-data (+ yb b)))))
                               (setf (data y x 0)
                                     (aref palette i 0)
@@ -303,8 +293,7 @@
 (defmacro trns (opaque)
   `(loop :with c = (get-image-channels)
          :with key = (etypecase transparency
-                       (ub16 (make-array 1 :element-type 'ub16
-                                           :initial-element transparency))
+                       (ub16 (make-array 1 :element-type 'ub16 :initial-element transparency))
                        (ub16a1d transparency))
          :for s :from (- (* width height (1- c)) (1- c)) :downto 0 :by (1- c)
          :for d :from (- (array-total-size data) c) :downto 0 :by c
@@ -327,18 +316,16 @@
           (end (array-total-size image)))
       (assert (plusp stride))
       (macrolet ((f (&key (opt t))
-                   `(loop
-                      :for y1 :below (floor h 2)
-                      :for y2 :downfrom (1- h) :above 0
-                      :do (loop :for x1 :from (* y1 stride) :below end
-                                :for x2 :from (* y2 stride) :below end
-                                :repeat stride
-                                :do (,@(if opt
-                                           '(locally (declare (optimize speed
-                                                               (safety 0))))
-                                           '(progn))
-                                     (rotatef (row-major-aref image x1)
-                                              (row-major-aref image x2)))))))
+                   `(loop :for y1 :below (floor h 2)
+                          :for y2 :downfrom (1- h) :above 0
+                          :do (loop :for x1 :from (* y1 stride) :below end
+                                    :for x2 :from (* y2 stride) :below end
+                                    :repeat stride
+                                    :do (,@(if opt
+                                               '(locally (declare (optimize speed (safety 0))))
+                                               '(progn))
+                                         (rotatef (row-major-aref image x1)
+                                                  (row-major-aref image x2)))))))
         (typecase image
           (ub8a3d (f))
           (ub8a2d (f))
@@ -355,9 +342,7 @@
 (defun decode ()
   (let ((image-data (data *png-object*)))
     (declare (ub8a1d image-data))
-    (with-slots (width height bit-depth interlace-method color-type transparency
-                 data)
-        *png-object*
+    (with-slots (width height bit-depth interlace-method color-type transparency data) *png-object*
       (if (eq interlace-method :null)
           (unfilter image-data width height 0)
           (setf image-data (deinterlace-adam7 image-data)))

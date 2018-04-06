@@ -5,13 +5,14 @@
   :maintainer "Michael Fiano <mail@michaelfiano.com>"
   :license "MIT"
   :homepage "https://www.michaelfiano.com/projects/pngload"
-  :source-control (:git "git@github.com:mfiano/pngload.git")
-  :bug-tracker "https://github.com/mfiano/pngload/issues"
-  :version "1.0.1"
+  :source-control (:git "https://github.com/HackerTheory/pngload.git")
+  :bug-tracker "https://github.com/HackerTheory/pngload/issues"
+  :version "1.0.2"
   :encoding :utf-8
   :long-description #.(uiop:read-file-string (uiop/pathname:subpathname *load-pathname* "README.md"))
   :depends-on (#:alexandria
-               #:parsley)
+               #:parsley
+               #:static-vectors)
   :pathname "src"
   :serial t
   :components

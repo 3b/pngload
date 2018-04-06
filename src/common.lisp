@@ -19,7 +19,7 @@
 (defvar *use-static-vector*)
 
 (defun get-path ()
-  (let ((stream (buffer-stream)))
+  (let ((stream (parsley:buffer-stream)))
     (typecase stream
       (file-stream (pathname stream))
       (t :IN-MEMORY))))

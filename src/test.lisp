@@ -61,17 +61,15 @@
         (files (uiop:directory-files (get-path))))
     (flet ((test-image (file)
              (multiple-value-bind (image error)
-                 (ignore-errors
-                  (load-file file :flip-y flip :flatten flatten))
+                 (load-file file :flip-y flip :flatten flatten)
                (let ((ref (load-ref-image file)))
                  (when flip
                    (setf ref (opticl:vertical-flip-image ref)))
                  (when flatten
                    (setf ref (make-array (array-total-size ref)
-                                     :element-type (array-element-type ref)
-                                     :displaced-to ref)))
-                 (unless (and image
-                              (equalp (data image) ref))
+                                         :element-type (array-element-type ref)
+                                         :displaced-to ref)))
+                 (unless (and image (equalp (data image) ref))
                    (when *break-on-failure*
                      (break "~s failed~@[: ~s~] ~s" (get-image-name file)
                             error
@@ -94,8 +92,8 @@
                   (test-images* :flatten t)
                   (test-images* :flip t :flatten t))))
     (format t "~%Total: Passed: ~s / Failed: ~s~%"
-            (reduce '+ (mapcar 'first r))
-            (reduce '+ (mapcar 'second r)))))
+            (reduce '+ (mapcar #'first r))
+            (reduce '+ (mapcar #'second r)))))
 
 (defun test-read-time (library-name func file count)
   (let ((start (local-time:now)))
@@ -103,10 +101,9 @@
       (funcall func file))
     (format t "~A: ~,3fs~%"
             library-name
-            (local-time:timestamp-difference
-             (local-time:now)
-             start))))
+            (local-time:timestamp-difference (local-time:now) start))))
 
 (defun test-read-times (file &key (count 1))
   (test-read-time "pngload" #'load-file file count)
+  (test-read-time "png-read" #'png-read:read-png-file file count)
   (test-read-time "opticl" #'opticl:read-image-file file count))
