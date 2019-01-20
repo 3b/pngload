@@ -2,7 +2,8 @@
 
 (defpackage #:pngload
   (:use #:cl)
-  (:export #:load-file
+  (:export #:png-object
+           #:load-file
            #:load-stream
            #:width
            #:height
