@@ -1,19 +1,20 @@
 (in-package :pngload)
 
 (defmacro define-chunk-data ((name &key (buffer t)) slots &body body)
-  (alexandria:with-gensyms (chunk-name chunk-data)
+  (alexandria:with-gensyms (chunk-name chunk-data )
     (let ((class-name (alexandria:symbolicate 'chunk-data- name)))
       `(progn
          (defclass ,class-name () ,slots)
          (defmethod parse-chunk-data ((,chunk-name (eql ,(alexandria:make-keyword name))))
            (let ((,chunk-data (make-instance ',class-name)))
              (with-slots ,slots ,chunk-data
-               (with-source (*png-source* :buffer
-                             ,(cond
-                                ((eql buffer t)
-                                 `(chunk-size))
-                                (t ;; number or nil
-                                 buffer)))
+               (with-source (*png-source* :end (+ (pos *png-source*)
+                                                  (chunk-size))
+                                          :buffer ,(cond
+                                                     ((eql buffer t)
+                                                      `(chunk-size))
+                                                     (t ;; number or nil
+                                                      buffer)))
                  ,@body))
              ,chunk-data))))))
 
@@ -124,11 +125,11 @@
 (define-chunk-data (gama) (image-gamma)
   (setf image-gamma (ub32be))
   (setf (gamma) image-gamma))
-#++
+
 (define-chunk-data (iccp) (profile-name compression-method compressed-profile)
-  (setf profile-name (parsley:read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
+  (setf profile-name (read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
         compression-method (ub8)
-        compressed-profile (parsley:read-bytes (chunk-offset) :processor #'parsley:uncompress-zlib)))
+        compressed-profile (read-bytes (chunk-offset) :zlib t)))
 
 (define-chunk-data (sbit) (greyscale red green blue alpha)
   (case (color-type *png-object*)
@@ -146,7 +147,7 @@
            green (ub8)
            blue (ub8)
            alpha (ub8)))))
-#++
+
 (define-chunk-data (srgb) (rendering-intent)
   (setf rendering-intent (ub8)
         (rendering-intent) rendering-intent))
@@ -243,6 +244,5 @@
         (text) (list keyword compressed-text-datastream)))
 
 (define-chunk-data (unknown) ()
-  (break "unknownn?")
   (warn 'unknown-chunk-detected))
 
