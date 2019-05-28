@@ -45,6 +45,7 @@
     (setf data (parsley:read-bytes (chunk-size)))
     (push data (data *png-object*))))
 
+#++
 (define-chunk-data (iend) ()
   (when *decode-data*
     (loop :with data = (reverse (data *png-object*))
@@ -55,6 +56,22 @@
           :for (read written) = (multiple-value-list
                                  (chipz:decompress out dstate part :output-start start))
           :finally (setf (data *png-object*) out))))
+
+(define-chunk-data (iend) ()
+  (when *decode-data*
+    (loop :with data = (reverse (data *png-object*))
+          :with out = (make-array (get-image-bytes) :element-type 'ub8)
+          :with dstate = (3bz::make-zlib-state :output-buffer out)
+          :for part :in data
+          :for read-context = (3bz::make-instance
+                               '3bz::octet-vector-context
+                               :octet-vector part
+                               :boxes (3bz::make-context-boxes
+                                       :end (length part)))
+          :do (3bz::decompress-zlib read-context dstate)
+          :finally (progn
+                     (assert (3bz::zs-finished dstate))
+                     (setf (data *png-object*) out)))))
 
 (define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x green-y blue-x blue-y)
   (setf white-point-x (parsley:read-uint-be 4)

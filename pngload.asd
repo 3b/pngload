@@ -12,6 +12,7 @@
   :long-description #.(uiop:read-file-string (uiop/pathname:subpathname *load-pathname* "README.md"))
   :depends-on (#:alexandria
                #:parsley
+               #:3bz
                #:static-vectors)
   :pathname "src"
   :serial t
