@@ -11,14 +11,16 @@
   :encoding :utf-8
   :long-description #.(uiop:read-file-string (uiop/pathname:subpathname *load-pathname* "README.md"))
   :depends-on (#:alexandria
-               #:parsley
                #:3bz
+               #:cffi
+               #:mmap
                #:static-vectors)
   :pathname "src"
   :serial t
   :components
   ((:file "package")
    (:file "common")
+   (:file "source")
    (:file "properties")
    (:file "conditions")
    (:file "chunk")

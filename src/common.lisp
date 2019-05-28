@@ -14,12 +14,10 @@
 (deftype ub16a3d () '(simple-array ub16 (* * *)))
 
 (defvar *png-object*)
+(defvar *png-source*)
 (defvar *decode-data*)
 (defvar *flip-y*)
 (defvar *use-static-vector*)
 
 (defun get-path ()
-  (let ((stream (parsley:buffer-stream)))
-    (typecase stream
-      (file-stream (pathname stream))
-      (t :IN-MEMORY))))
+  (source-path *png-source*))
