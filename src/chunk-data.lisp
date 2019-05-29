@@ -72,44 +72,40 @@
 (defun source->3bz-context (s)
   (etypecase s ;; shouldn't get stream-source here
     (octet-vector-source
-     (make-instance '3bz::octet-vector-context
-                    :octet-vector (data s)
-                    :boxes (3bz::make-context-boxes
-                            :start (start s)
-                            :end (end s)
-                            :offset (pos s))))
+     (3bz:make-octet-vector-context (data s)
+                                    :start (pos s)
+                                    :end (end s)
+                                    :offset (pos s)))
     (octet-pointer-source
-     (make-instance '3bz::octet-pointer-context
-                    :op (MAKE-INSTANCE '3BZ::OCTET-POINTER
-                                       :BASE (data s)
-                                       :SIZE (end s)
-                                       :scope (cons t t))
-                    :pointer (data s)
-                    :boxes (3bz::make-context-boxes
-                            :start (start s)
-                            :end (end s)
-                            :offset (pos s))))
+     (3bz:make-octet-pointer-context *mmap-pointer*
+                                     :start (pos s)
+                                     :end (end s)
+                                     :offset (pos s)))
     (file-stream-source
+     #++ ;; 3bz stream input is slow, so copy for now
+     (3bz:make-octet-stream-context (data s)
+                                    :start (pos s)
+                                    :end (end s)
+                                    :offset (pos s))
      (let ((buf (make-array (- (end s) (pos s))
                             :element-type 'ub8))
            (p (file-position (data s))))
        (file-position (data s) (pos s))
        (read-sequence buf (data s))
        (file-position (data s) p)
-       (make-instance '3bz::octet-vector-context
-                      :octet-vector buf
-                      :boxes (3bz::make-context-boxes
-                              :end (length buf)))))))
+       (3bz:make-octet-vector-context buf)))))
+
 (define-chunk-data (iend) ()
   (when *decode-data*
     (loop :with data = (reverse (data *png-object*))
           :with out = (make-array (get-image-bytes) :element-type 'ub8)
-          :with dstate = (3bz::make-zlib-state :output-buffer out)
+          :with dstate = (3bz:make-zlib-state :output-buffer out)
           :for part :in data
           :for read-context = (source->3bz-context part)
-          :do (3bz::decompress-zlib read-context dstate)
+          :do (3bz:%resync-file-stream read-context)
+              (3bz:decompress read-context dstate)
           :finally (progn
-                     (assert (3bz::zs-finished dstate))
+                     (assert (3bz:finished dstate))
                      (setf (data *png-object*) out)))))
 
 (define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x green-y blue-x blue-y)
@@ -207,7 +203,7 @@
               (ecase sample-bytes
                 (1 (ub8))
                 (2 (ub16be))
-                (4 (ub32be)))))y
+                (4 (ub32be)))))
       (setf (aref palette-entries entry 4) (ub16be)))))
 
 (define-chunk-data (time) (year month day hour minute second)

@@ -63,17 +63,19 @@ to a foreign library.
 
 See LOAD-STREAM if you want to load a PNG datastream.
 "
+
   (mmap:with-mmap (pointer fd size path)
-    (let ((*png-source* (make-instance 'octet-pointer-source
-                                       :data pointer
-                                       :end size)))
-      (let ((*png-object* (make-instance 'png-object))
-            (*decode-data* decode)
-            (*flatten* flatten)
-            (*flip-y* flip-y)
-            (*use-static-vector* static-vector))
-        (setf (parse-tree *png-object*) (parse-datastream))
-        *png-object*)))
+    (3bz:with-octet-pointer (*mmap-pointer* pointer size)
+      (let ((*png-source* (make-instance 'octet-pointer-source
+                                         :data pointer
+                                         :end size)))
+        (let ((*png-object* (make-instance 'png-object))
+              (*decode-data* decode)
+              (*flatten* flatten)
+              (*flip-y* flip-y)
+              (*use-static-vector* static-vector))
+          (setf (parse-tree *png-object*) (parse-datastream))
+          *png-object*))))
   #++
   (with-open-file (in path :element-type 'ub8)
     (let ((*png-source* (make-instance 'file-stream-source

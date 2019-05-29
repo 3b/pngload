@@ -63,43 +63,6 @@
     (unless no-copy
       (file-position (data source) (+ (file-position (data source)) size)))))
 
-#++
-(defmethod skip-bytes (source count)
-  (assert (<= (+ (pos source) count)
-              (end source)))
-  (incf (pos source) count))
-
-#++
-(defmethod skip-bytes ((source stream-source) count)
-  (loop repeat count do (read-byte (data source))))
-
-#++
-(defmethod skip-bytes ((source file-stream-source) count)
-  (file-position (data source) (+ (file-position (data source)) count)))
-
-(defun decompress (buf)
-  (let ((parts nil)
-        (state (3bz::make-zlib-state))
-        (rc (make-instance '3bz::octet-vector-context
-                           :octet-vector buf
-                           :boxes (3bz::make-context-boxes
-                                   :end (length buf)))))
-
-    (loop for out = (make-array (length buf) :element-type 'ub8)
-            then (make-array (* 2 (length out)) :element-type 'ub8)
-          do (setf (3bz::zs-output-buffer state) out)
-             (setf (3bz::zs-output-offset state) 0)
-             (let ((c (3bz::decompress-zlib rc state)))
-               (push (cons out c) parts))
-             (assert (not (3bz::zs-input-underrun state)))
-          until (3bz::zs-finished state))
-    (let* ((s (reduce '+ parts :key 'cdr))
-           (b (make-array s :element-type 'ub8)))
-      (loop for start = 0 then (+ start c)
-            for (p . c) in (nreverse parts)
-            do (replace b p :start1 start :end2 c))
-      b)))
-
 (defmacro with-octet-vector-source ((source &key end)
                                     &body body)
   (alexandria:with-gensyms (v p e e1)
@@ -133,7 +96,7 @@
                   (let ((a (make-array count :element-type 'ub8)))
                     (map-into a #'ub8)
                     (when zlib
-                      (setf a (decompress a)))
+                      (setf a (3bz:decompress-vector a :format :zlib)))
                     a))
                 (source-region (n)
                   (setf (pos ,source) ,p)
@@ -150,7 +113,7 @@
                     (when null-terminated-p
                       (setf s (subseq s 0 (position 0 s))))
                     (when zlib
-                      (setf s (decompress s)))
+                      (setf s (3bz:decompress-vector s :format :zlib)))
                     (babel:octets-to-string s :encoding encoding))))
          (declare (inline ub8 ub16be ub32be)
                   (ignorable #'ub8 #'ub16be #'ub32be
@@ -222,7 +185,7 @@
                   (let ((a (make-array count :element-type 'ub8)))
                     (map-into a #'ub8)
                     (when zlib
-                      (setf a (decompress a)))
+                      (setf a (3bz:decompress-vector a :format :zlib)))
                     a))
                 (source-region (n)
                   (setf (pos ,source) ,p)
@@ -239,7 +202,7 @@
                     (when null-terminated-p
                       (setf s (subseq s 0 (position 0 s))))
                     (when zlib
-                      (setf s (decompress s)))
+                      (setf s (3bz:decompress-vector s :format :zlib)))
                     (babel:octets-to-string s :encoding encoding))))
          (declare (inline ub8 ub16be ub32be)
                   (ignorable #'ub8 #'ub16be #'ub32be
@@ -297,7 +260,7 @@
                       (let ((a (make-array count :element-type 'ub8)))
                         (map-into a #'ub8)
                         (when zlib
-                          (setf a (decompress a)))
+                          (setf a (3bz:decompress-vector a :format :zlib)))
                         a))
                     (source-region (n)
                       (setf (pos ,source) ,p)
@@ -314,7 +277,7 @@
                         (when null-terminated-p
                           (setf s (subseq s 0 (position 0 s))))
                         (when zlib
-                          (setf s (decompress s)))
+                          (setf s (3bz:decompress-vector s :format :zlib)))
                         (babel:octets-to-string s :encoding encoding))))
              (declare (inline ub8 ub16be ub32be)
                       (ignorable #'ub8 #'ub16be #'ub32be
@@ -370,7 +333,7 @@
                       (let ((a (make-array count :element-type 'ub8)))
                         (map-into a #'ub8)
                         (when zlib
-                          (setf a (decompress a)))
+                          (setf a (3bz:decompress-vector a :format :zlib)))
                         a))
                     (source-region (n)
                       (setf (pos ,source) ,p)
@@ -388,7 +351,7 @@
                         (when null-terminated-p
                           (setf s (subseq s 0 (position 0 s))))
                         (when zlib
-                          (setf s (decompress s)))
+                          (setf s (3bz:decompress-vector s :format :zlib)))
                         (babel:octets-to-string s :encoding encoding))))
              (declare (inline ub8 ub16be ub32be)
                       (ignorable #'ub8 #'ub16be #'ub32be
@@ -398,10 +361,7 @@
              (unwind-protect
                   (macrolet ((nest (&body b)
                                `(progn
-                                        ;(setf (pos ,',source) ,',p)
-                                  (progn ,@b)
-                                        ;(setf ,',p (pos ,',source))
-                                  )))
+                                  ,@b)))
                     ,@(when end
                         `((when (end ,source)
                             (assert (<= ,end (end ,source))))

@@ -18,6 +18,7 @@
 (defvar *decode-data*)
 (defvar *flip-y*)
 (defvar *use-static-vector*)
+(defvar *mmap-pointer*)
 
 (defun get-path ()
   (source-path *png-source*))
