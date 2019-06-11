@@ -5,17 +5,19 @@
     (let ((class-name (alexandria:symbolicate 'chunk-data- name)))
       `(progn
          (defclass ,class-name () ,slots)
-         (defmethod parse-chunk-data ((,chunk-name (eql ,(alexandria:make-keyword name))))
+         (defmethod parse-chunk-data
+             ((,chunk-name (eql ,(alexandria:make-keyword name))))
            (let ((,chunk-data (make-instance ',class-name)))
              (with-slots ,slots ,chunk-data
-               (parsley:with-buffer-read (:sequence (parsley:read-bytes (chunk-size)))
+               (parsley:with-buffer-read
+                   (:sequence (parsley:read-bytes (chunk-size)))
                  ,@body))
              ,chunk-data))))))
 
 (defgeneric parse-chunk-data (chunk-name))
 
-(define-chunk-data (ihdr) (width height bit-depth colour-type compression-method filter-method
-                                 interlace-method)
+(define-chunk-data (ihdr) (width height bit-depth colour-type compression-method
+                                 filter-method interlace-method)
   (setf width (parsley:read-uint-be 4)
         height (parsley:read-uint-be 4)
         bit-depth (parsley:read-uint-be 1)
@@ -53,10 +55,12 @@
           :for part :in data
           :for start = 0 :then (+ start written)
           :for (read written) = (multiple-value-list
-                                 (chipz:decompress out dstate part :output-start start))
+                                 (chipz:decompress
+                                  out dstate part :output-start start))
           :finally (setf (data *png-object*) out))))
 
-(define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x green-y blue-x blue-y)
+(define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x
+                                         green-y blue-x blue-y)
   (setf white-point-x (parsley:read-uint-be 4)
         white-point-y (parsley:read-uint-be 4)
         red-x (parsley:read-uint-be 4)
@@ -71,9 +75,13 @@
   (setf (gamma) image-gamma))
 
 (define-chunk-data (iccp) (profile-name compression-method compressed-profile)
-  (setf profile-name (parsley:read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
+  (setf profile-name (parsley:read-string :bytes 79
+                                          :encoding :latin-1
+                                          :null-terminated-p t)
         compression-method (parsley:read-uint-be 1)
-        compressed-profile (parsley:read-bytes (chunk-offset) :processor #'parsley:uncompress-zlib)))
+        compressed-profile (parsley:read-bytes
+                            (chunk-offset)
+                            :processor #'parsley:uncompress-zlib)))
 
 (define-chunk-data (sbit) (greyscale red green blue alpha)
   (case (color-type *png-object*)
@@ -123,7 +131,8 @@
            blue (parsley:read-uint-be 2)
            green (parsley:read-uint-be 2))
      (setf (transparency *png-object*)
-           (make-array 3 :element-type 'ub16 :initial-contents (list red green blue))))
+           (make-array 3 :element-type 'ub16
+                         :initial-contents (list red green blue))))
     (:indexed-colour
      (let ((size (chunk-size)))
        (setf alpha-values (make-array size :element-type 'ub8))
@@ -138,7 +147,9 @@
         (pixel-size) (list pixels-per-unit-x pixels-per-unit-y unit-specifier)))
 
 (define-chunk-data (splt) (palette-name sample-depth palette-entries)
-  (setf palette-name (parsley:read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
+  (setf palette-name (parsley:read-string :bytes 79
+                                          :encoding :latin-1
+                                          :null-terminated-p t)
         sample-depth (parsley:read-uint-be 1))
   (let* ((entry-bytes (ecase sample-depth (8 6) (16 10)))
          (sample-bytes (/ sample-depth 8))
@@ -146,7 +157,8 @@
     (setf palette-entries (make-array `(,entry-count 5) :element-type 'ub16))
     (dotimes (entry entry-count)
       (dotimes (sample 4)
-        (setf (aref palette-entries entry sample) (parsley:read-uint-be sample-bytes)))
+        (setf (aref palette-entries entry sample)
+              (parsley:read-uint-be sample-bytes)))
       (setf (aref palette-entries entry 4) (parsley:read-uint-be 2)))))
 
 (define-chunk-data (time) (year month day hour minute second)
@@ -158,28 +170,39 @@
         second (parsley:read-uint-be 1)
         (last-modified) (list year month day hour minute second)))
 
-(define-chunk-data (itxt) (keyword compression-flag compression-method language-tag
-                                   translated-keyword text)
-  (setf keyword (parsley:read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
+(define-chunk-data (itxt) (keyword compression-flag compression-method
+                                   language-tag translated-keyword text)
+  (setf keyword (parsley:read-string :bytes 79
+                                     :encoding :latin-1
+                                     :null-terminated-p t)
         compression-flag (parsley:read-uint-be 1)
         compression-method (parsley:read-uint-be 1)
-        language-tag (parsley:read-string :encoding :latin-1 :null-terminated-p t)
-        translated-keyword (parsley:read-string :encoding :utf-8 :null-terminated-p t))
+        language-tag (parsley:read-string :encoding :latin-1
+                                          :null-terminated-p t)
+        translated-keyword (parsley:read-string :encoding :utf-8
+                                                :null-terminated-p t))
   (if (= compression-flag 1)
-      (setf text (parsley:read-string :encoding :utf-8 :processor #'parsley:uncompress-zlib))
+      (setf text (parsley:read-string :encoding :utf-8
+                                      :processor #'parsley:uncompress-zlib))
       (setf text (parsley:read-string :encoding :utf-8)))
   (setf (text) (list keyword text language-tag translated-keyword)))
 
 (define-chunk-data (text) (keyword text-string)
-  (setf keyword (parsley:read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
+  (setf keyword (parsley:read-string :bytes 79
+                                     :encoding :latin-1
+                                     :null-terminated-p t)
         text-string (parsley:read-string :encoding :latin-1)
         (text) (list keyword text-string)))
 
-(define-chunk-data (ztxt) (keyword compression-method compressed-text-datastream)
-  (setf keyword (parsley:read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
+(define-chunk-data (ztxt) (keyword compression-method
+                                   compressed-text-datastream)
+  (setf keyword (parsley:read-string :bytes 79
+                                     :encoding :latin-1
+                                     :null-terminated-p t)
         compression-method (parsley:read-uint-be 1)
-        compressed-text-datastream (parsley:read-string :encoding :latin-1
-                                                        :processor #'parsley:uncompress-zlib)
+        compressed-text-datastream (parsley:read-string
+                                    :encoding :latin-1
+                                    :processor #'parsley:uncompress-zlib)
         (text) (list keyword compressed-text-datastream)))
 
 (define-chunk-data (unknown) ()

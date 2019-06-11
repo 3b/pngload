@@ -40,7 +40,8 @@
     (let* ((channels (get-image-channels))
            (args (list (if *flatten*
                            (* width height channels)
-                           `(,height ,width ,@(when (> channels 1) (list channels))))
+                           `(,height ,width ,@(when (> channels 1)
+                                                (list channels))))
                        :element-type (ecase bit-depth
                                        ((1 2 4 8) 'ub8)
                                        (16 'ub16)))))
@@ -129,7 +130,8 @@
                   :for xo fixnum :from left-start
                   :for x fixnum :below scanline-bytes
                   :for sample = (aref data xs)
-                  :for out = (unfilter-byte filter x y data left-start up-start pixel-bytes)
+                  :for out = (unfilter-byte filter x y data left-start up-start
+                                            pixel-bytes)
                   :do (setf (aref data xo)
                             (ldb (byte 8 0) (+ sample out))))))
 
@@ -245,10 +247,14 @@
           :for y :below height
           :for yb = (* y scanline-bytes)
           :do (flet (((setf data) (v y x c)
-                       (setf (row-major-aref data (+ (* y dstride) (* x channels) c)) v)))
+                       (setf (row-major-aref
+                              data (+ (* y dstride) (* x channels) c))
+                             v)))
                 (loop :for x :below width
                       :do (multiple-value-bind (b p) (floor x pixels-per-byte)
-                            (let ((i (ldb (byte bit-depth (- 8 (* p bit-depth) bit-depth))
+                            (let ((i (ldb (byte bit-depth (- 8
+                                                             (* p bit-depth)
+                                                             bit-depth))
                                           (aref image-data (+ yb b)))))
                               (setf (data y x 0)
                                     (aref palette i 0)
@@ -293,7 +299,8 @@
 (defmacro trns (opaque)
   `(loop :with c = (get-image-channels)
          :with key = (etypecase transparency
-                       (ub16 (make-array 1 :element-type 'ub16 :initial-element transparency))
+                       (ub16 (make-array 1 :element-type 'ub16
+                                           :initial-element transparency))
                        (ub16a1d transparency))
          :for s :from (- (* width height (1- c)) (1- c)) :downto 0 :by (1- c)
          :for d :from (- (array-total-size data) c) :downto 0 :by c
@@ -322,10 +329,13 @@
                                     :for x2 :from (* y2 stride) :below end
                                     :repeat stride
                                     :do (,@(if opt
-                                               '(locally (declare (optimize speed (safety 0))))
+                                               '(locally
+                                                 (declare
+                                                  (optimize speed (safety 0))))
                                                '(progn))
                                          (rotatef (row-major-aref image x1)
-                                                  (row-major-aref image x2)))))))
+                                                  (row-major-aref
+                                                   image x2)))))))
         (typecase image
           (ub8a3d (f))
           (ub8a2d (f))
@@ -342,7 +352,9 @@
 (defun decode ()
   (let ((image-data (data *png-object*)))
     (declare (ub8a1d image-data))
-    (with-slots (width height bit-depth interlace-method color-type transparency data) *png-object*
+    (with-slots (width height bit-depth interlace-method color-type
+                 transparency data)
+        *png-object*
       (if (eq interlace-method :null)
           (unfilter image-data width height 0)
           (setf image-data (deinterlace-adam7 image-data)))

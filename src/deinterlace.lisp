@@ -56,10 +56,15 @@
         :do (loop :for sx :below w
                   :for dx :from dx1 :by ddx
                   :do (multiple-value-bind (sxb sxp) (floor sx pixels-per-byte)
-                        (multiple-value-bind (dxb dxp) (floor dx pixels-per-byte)
-                          (setf (ldb (byte pixel-bits (- 8 (* dxp pixel-bits) pixel-bits))
+                        (multiple-value-bind (dxb dxp)
+                            (floor dx pixels-per-byte)
+                          (setf (ldb (byte pixel-bits (- 8
+                                                         (* dxp pixel-bits)
+                                                         pixel-bits))
                                      (aref dest (+ dyb dxb)))
-                                (ldb (byte pixel-bits (- 8 (* sxp pixel-bits) pixel-bits))
+                                (ldb (byte pixel-bits (- 8
+                                                         (* sxp pixel-bits)
+                                                         pixel-bits))
                                      (aref source (+ syb sxb)))))))))
 
 (defun add-sub-image (dest source pass w h pixel-bytes start)
@@ -93,6 +98,7 @@
           :when (and (plusp sw) (plusp sh))
             :do (unfilter data sw sh start)
                 (if (< pixel-bits 8)
-                    (add-sub-image/sub-byte dest data pass sw sh pixel-bits start)
+                    (add-sub-image/sub-byte dest data pass sw sh pixel-bits
+                                            start)
                     (add-sub-image dest data pass sw sh (/ pixel-bits 8) start))
           :finally (return dest))))

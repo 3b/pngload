@@ -68,7 +68,8 @@
           (encode-universal-time second minute hour day month year))))
 
 (defun (setf text) (text)
-  (destructuring-bind (keyword string &optional language translated-keyword) text
+  (destructuring-bind (keyword string &optional language translated-keyword)
+      text
     (push
      (if (and language translated-keyword)
          (list language keyword translated-keyword string)
