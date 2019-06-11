@@ -1,4 +1,4 @@
-(in-package :pngload)
+(in-package #:pngload)
 
 (defclass png-object ()
   ((parse-tree :accessor parse-tree)

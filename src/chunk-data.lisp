@@ -1,4 +1,4 @@
-(in-package :pngload)
+(in-package #:pngload)
 
 (defmacro define-chunk-data ((name) slots &body body)
   (alexandria:with-gensyms (chunk-name chunk-data)

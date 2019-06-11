@@ -1,8 +1,9 @@
-(in-package :cl-user)
+(in-package #:cl-user)
 
 (defpackage #:pngload
   (:use #:cl)
   (:export
+   #:png-object
    #:load-file
    #:load-stream
    #:width

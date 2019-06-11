@@ -1,4 +1,4 @@
-(in-package :cl-user)
+(in-package #:cl-user)
 
 (defpackage #:pngload.test
   (:use #:cl

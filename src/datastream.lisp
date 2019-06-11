@@ -1,4 +1,4 @@
-(in-package :pngload)
+(in-package #:pngload)
 
 (defclass datastream ()
   ((signature :reader signature)
