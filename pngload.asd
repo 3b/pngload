@@ -9,7 +9,6 @@
   :bug-tracker "https://github.com/HackerTheory/pngload/issues"
   :version "1.0.2"
   :encoding :utf-8
-  :long-description #.(uiop:read-file-string (uiop/pathname:subpathname *load-pathname* "README.md"))
   :depends-on (#:alexandria
                #:parsley
                #:static-vectors)
