@@ -7,7 +7,6 @@
   :homepage "https://www.michaelfiano.com/projects/pngload"
   :source-control (:git "https://github.com/HackerTheory/pngload.git")
   :bug-tracker "https://github.com/HackerTheory/pngload/issues"
-  :version "1.0.2"
   :encoding :utf-8
   :depends-on (#:alexandria
                #:parsley

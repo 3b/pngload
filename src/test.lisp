@@ -6,7 +6,7 @@
   (:export #:test-images
            #:test-read-times))
 
-(in-package :pngload.test)
+(in-package #:pngload.test)
 
 (defvar *failed* nil)
 (defparameter *ref* :png-read)
