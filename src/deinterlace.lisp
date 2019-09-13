@@ -38,8 +38,8 @@
                  (multiple-value-bind (w e) (floor dim 8)
                    (+ (* (aref (aref array pass) 8) w)
                       (aref (aref array pass) e)))))
-          (list (calc (width *png-object*) +adam7-widths+)
-                (calc (height *png-object*) +adam7-heights+)))))
+          (list (calc (width *png*) +adam7-widths+)
+                (calc (height *png*) +adam7-heights+)))))
 
 (defun add-sub-image/sub-byte (dest source pass w h pixel-bits start)
   (loop :with dx1 = (1- (position 1 (aref +adam7-widths+ pass)))
@@ -47,7 +47,7 @@
         :with ddx = (/ 8 (aref (aref +adam7-widths+ pass) 8))
         :with ddy = (/ 8 (aref (aref +adam7-heights+ pass) 8))
         :with ssb = (get-scanline-bytes w)
-        :with dsb = (get-scanline-bytes (width *png-object*))
+        :with dsb = (get-scanline-bytes (width *png*))
         :with pixels-per-byte = (/ 8 pixel-bits)
         :for sy :below h
         :for dy :from dy1 :by ddy
@@ -72,7 +72,7 @@
         :with dy = (/ 8 (aref (aref +adam7-heights+ pass) 8))
         :for sy :below h
         :for y :from y1 :by dy
-        :for dyb = (* y (* (width *png-object*)) pixel-bytes)
+        :for dyb = (* y (* (width *png*)) pixel-bytes)
         :for syb = (+ start (* sy w pixel-bytes))
         :do (loop :for sx :below (* pixel-bytes w) :by pixel-bytes
                   :for x :from (* x1 pixel-bytes) :by (* dx pixel-bytes)
@@ -81,7 +81,7 @@
                                      (aref source (+ syb sx i)))))))
 
 (defun deinterlace-adam7 (data)
-  (with-slots (width height bit-depth) *png-object*
+  (with-slots (width height bit-depth) *png*
     (loop :with pixel-bits = (* (get-channel-count) bit-depth)
           :with dest = (make-array (* height (ceiling (* width pixel-bits) 8))
                                    :element-type 'ub8

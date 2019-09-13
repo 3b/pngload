@@ -1,31 +1,23 @@
 (in-package #:pngload)
 
-(defclass png-object ()
-  ((parse-tree :accessor parse-tree)
-   (width :accessor width)
-   (height :accessor height)
-   (bit-depth :accessor bit-depth)
-   (color-type :reader color-type)
-   (palette-count :accessor palette-count
-                  :initform 0)
-   (palette :accessor palette :initform nil)
-   (gamma :reader gamma
-          :initform 1.0)
-   (transparency :accessor transparency
-                 :initform nil)
-   (rendering-intent :reader rendering-intent
-                     :initform nil)
-   (compression-method :reader compression-method)
-   (interlace-method :reader interlace-method)
-   (filter-method :reader filter-method)
-   (pixel-size :reader pixel-size
-               :initform '(:x 1 :y 1 :unit :unknown))
-   (last-modified :reader last-modified
-                  :initform nil)
-   (text :reader text
-         :initform nil)
-   (data :accessor data
-         :initform nil)))
+(defstruct (png (:conc-name nil))
+  parse-tree
+  width
+  height
+  bit-depth
+  color-type
+  (palette-count 0)
+  palette
+  (gamma 1.0)
+  transparency
+  rendering-intent
+  compression-method
+  interlace-method
+  filter-method
+  (pixel-size '(:x 1 :y 1 :unit :unknown))
+  last-modified
+  text
+  data)
 
 (defun load-stream (stream &key (decode t) flatten flip-y static-vector)
   "load the given PNG datastream from STREAM. The following options are
@@ -42,13 +34,13 @@ suitable to be passed to a foreign library.
 
 See LOAD-FILE if you want to load a PNG datastream from a file on disk."
   (let ((*png-source* (make-instance 'stream-source :data stream)))
-    (let ((*png-object* (make-instance 'png-object))
+    (let ((*png* (make-png))
           (*decode-data* decode)
           (*flatten* flatten)
           (*flip-y* flip-y)
           (*use-static-vector* static-vector))
-      (setf (parse-tree *png-object*) (parse-datastream))
-      *png-object*)))
+      (setf (parse-tree *png*) (parse-datastream))
+      *png*)))
 
 (defun load-file (path &key (decode t) flatten flip-y static-vector)
   "Load the PNG file located at the given filesystem PATH. The following options
@@ -65,19 +57,18 @@ suitable to be passed to a foreign library.
 
 See LOAD-STREAM if you want to load a PNG datastream.
 "
-
   (mmap:with-mmap (pointer fd size path)
     (3bz:with-octet-pointer (*mmap-pointer* pointer size)
       (let ((*png-source* (make-instance 'octet-pointer-source
                                          :data pointer
                                          :end size)))
-        (let ((*png-object* (make-instance 'png-object))
+        (let ((*png* (make-png))
               (*decode-data* decode)
               (*flatten* flatten)
               (*flip-y* flip-y)
               (*use-static-vector* static-vector))
-          (setf (parse-tree *png-object*) (parse-datastream))
-          *png-object*)))))
+          (setf (parse-tree *png*) (parse-datastream))
+          *png*)))))
 
 (defmacro with-png-in-static-vector ((png-var path-or-stream
                                       &key (decode t) flip-y) &body body)
@@ -116,7 +107,7 @@ See LOAD-FILE"
   (with-slots (width height bit-depth transparency color-type) png
     (when (and (member color-type '(:greyscale :greyscale-alpha))
                (< bit-depth 8))
-      (let* ((*png-object* png)
+      (let* ((*png* png)
              (channels (get-image-channels))
              (grey-channels (- channels (if transparency 1 0)))
              (data (data png))

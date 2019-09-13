@@ -4,7 +4,7 @@
   ((start :reader start :initform 0 :initarg :start)
    (end :accessor end :initarg :end :initform nil)
    (pos :accessor pos :initform 0 :initarg :pos)
-   (data :reader data :initarg :data)))
+   (data :reader source-data :initarg :data)))
 
 (defclass octet-vector-source (source)
   ())
@@ -22,7 +22,7 @@
   :in-memory)
 
 (defmethod source-path ((source file-stream-source))
-  (file-namestring (data source)))
+  (file-namestring (source-data source)))
 
 (defun vector-source-from-stream (stream count)
   (let ((buf (make-array count :element-type 'ub8)))
@@ -30,38 +30,42 @@
     (make-instance 'octet-vector-source :data buf :end count)))
 
 (defmethod .source-region (source size &key &allow-other-keys)
-  (assert (<= (+ (pos source) size)
-              (end source)))
-  (make-instance (type-of source)
-                 :data (data source)
-                 :start (pos source)
-                 :end (+ (pos source) size)
-                 :pos (pos source)))
+  (let ((pos (pos source)))
+    (assert (<= (+ pos size)
+                (end source)))
+    (make-instance (type-of source)
+                   :data (source-data source)
+                   :start pos
+                   :end (+ pos size)
+                   :pos pos)))
 
 (defmethod .source-region ((source stream-source) size &key no-copy)
-  (when (end source)
-    (assert (<= (+ (pos source) size)
-                (end source))))
-  (if no-copy
-      (make-instance (type-of source)
-                     :data (data source)
-                     :start (pos source)
-                     :end (+ (pos source) size)
-                     :pos (pos source))
-      (vector-source-from-stream (data source) size)))
+  (let ((pos (pos source))
+        (data (source-data source)))
+    (when (end source)
+      (assert (<= (+ pos size) (end source))))
+    (if no-copy
+        (make-instance (type-of source)
+                       :data data
+                       :start pos
+                       :end (+ pos size)
+                       :pos pos)
+        (vector-source-from-stream data size))))
 
 (defmethod .source-region ((source file-stream-source) size &key no-copy)
-  (prog1 (make-instance 'file-stream-source
-                        :data (data source)
-                        :start (file-position (data source))
-                        :end (+ (file-position (data source)) size)
-                        :pos (file-position (data source)))
-    (unless no-copy
-      (file-position (data source) (+ (file-position (data source)) size)))))
+  (let* ((data (source-data source))
+         (pos (file-position data)))
+    (prog1 (make-instance 'file-stream-source
+                          :data data
+                          :start pos
+                          :end (+ pos size)
+                          :pos pos)
+      (unless no-copy
+        (file-position data (+ pos size))))))
 
 (defmacro with-octet-vector-source ((source &key end) &body body)
   (alexandria:with-gensyms (v p e e1)
-    `(let ((,v (data ,source))
+    `(let ((,v (source-data ,source))
            (,p (pos ,source))
            ,@(when end `((,e1 (end ,source))))
            (,e ,(or end `(end ,source))))
@@ -150,7 +154,7 @@
 
 (defmacro with-octet-pointer-source ((source &key end) &body body)
   (alexandria:with-gensyms (v p e e1)
-    `(let ((,v (data ,source))
+    `(let ((,v (source-data ,source))
            (,p (pos ,source))
            ,@(when end `((,e1 (end ,source))))
            (,e ,(or end `(end ,source))))
@@ -220,11 +224,12 @@
 
 (defmacro with-file-stream-source ((source &key buffer end) &body body)
   (if buffer
-      `(let ((,source (vector-source-from-stream (data ,source) ,buffer)))
+      `(let ((,source (vector-source-from-stream (source-data ,source)
+                                                 ,buffer)))
          (with-octet-vector-source (,source)
            ,@body))
       (alexandria:with-gensyms (v p e e1)
-        `(let ((,v (data ,source))
+        `(let ((,v (source-data ,source))
                (,p (pos ,source))
                ,@(when end `((,e1 (end ,source))))
                (,e ,(or end `(end ,source))))
@@ -295,11 +300,12 @@
 
 (defmacro with-stream-source ((source &key buffer end) &body body)
   (if buffer
-      `(let ((,source (vector-source-from-stream (data ,source) ,buffer)))
+      `(let ((,source (vector-source-from-stream (source-data ,source)
+                                                 ,buffer)))
          (with-octet-vector-source (,source)
            ,@body))
       (alexandria:with-gensyms (v p e e1)
-        `(let ((,v (data ,source))
+        `(let ((,v (source-data ,source))
                (,p (pos ,source))
                ,@(when end `((,e1 (end ,source))))
                (,e ,(or end `(end ,source))))

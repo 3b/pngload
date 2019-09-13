@@ -13,7 +13,7 @@
 (deftype ub16a2d () '(simple-array ub16 (* *)))
 (deftype ub16a3d () '(simple-array ub16 (* * *)))
 
-(defvar *png-object*)
+(defvar *png*)
 (defvar *png-source*)
 (defvar *decode-data*)
 (defvar *flip-y*)

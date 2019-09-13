@@ -1,14 +1,13 @@
 (in-package #:pngload)
 
-(defclass datastream ()
-  ((signature :reader signature)
-   (chunks :reader chunks)))
+(defstruct datastream
+  signature
+  chunks)
 
 (defun parse-datastream ()
-  (let ((datastream (make-instance 'datastream)))
-    (with-slots (signature chunks) datastream
-      (setf signature (parse-signature)
-            chunks (parse-all-chunks)))
+  (let ((datastream (make-datastream)))
+    (setf (datastream-signature datastream) (parse-signature)
+          (datastream-chunks datastream) (parse-all-chunks))
     (when *decode-data*
       (decode))
     datastream))
@@ -25,3 +24,9 @@
         :collect chunk
         :when (eq (chunk-name chunk) :iend)
           :do (loop-finish)))
+
+(defmacro foo (slots)
+  `(symbol-macrolet ,(mapcar (lambda (x) (list x x)) slots)
+     (progn)))
+
+(foo (a b c))
