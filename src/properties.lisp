@@ -70,8 +70,7 @@
 (defun (setf text) (text)
   (destructuring-bind (keyword string &optional language translated-keyword)
       text
-    (push
-     (if (and language translated-keyword)
-         (list language keyword translated-keyword string)
-         (cons keyword string))
-     (slot-value *png-object* 'text))))
+    (push (if (and language translated-keyword)
+              (list language keyword translated-keyword string)
+              (cons keyword string))
+          (slot-value *png-object* 'text))))

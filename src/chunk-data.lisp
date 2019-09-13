@@ -21,10 +21,8 @@
 
 (defgeneric parse-chunk-data (chunk-name))
 
-(define-chunk-data (ihdr)
-                   (width height bit-depth
-                          colour-type compression-method filter-method
-                          interlace-method)
+(define-chunk-data (ihdr) (width height bit-depth colour-type compression-method
+                                 filter-method interlace-method)
   (setf width (ub32be)
         height (ub32be)
         bit-depth (ub8)
@@ -55,19 +53,6 @@
         (setf data (source-region (chunk-size)))
         (push data (data *png-object*)))
       (skip-bytes (chunk-size))))
-
-#++
-(define-chunk-data (iend) ()
-  (when *decode-data*
-    (loop :with data = (reverse (data *png-object*))
-          :with dstate = (chipz:make-dstate 'chipz:zlib)
-          :with out = (make-array (get-image-bytes) :element-type 'ub8)
-          :for part :in data
-          :for start = 0 :then (+ start written)
-          :for (read written) = (multiple-value-list
-                                 (chipz:decompress
-                                  out dstate part :output-start start))
-          :finally (setf (data *png-object*) out))))
 
 (defun source->3bz-context (s)
   (etypecase s ;; shouldn't get stream-source here
@@ -108,7 +93,8 @@
                      (assert (3bz:finished dstate))
                      (setf (data *png-object*) out)))))
 
-(define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x green-y blue-x blue-y)
+(define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x
+                                         green-y blue-x blue-y)
   (setf white-point-x (ub32be)
         white-point-y (ub32be)
         red-x (ub32be)
@@ -123,7 +109,9 @@
   (setf (gamma) image-gamma))
 
 (define-chunk-data (iccp) (profile-name compression-method compressed-profile)
-  (setf profile-name (read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
+  (setf profile-name (read-string :bytes 79
+                                  :encoding :latin-1
+                                  :null-terminated-p t)
         compression-method (ub8)
         compressed-profile (read-bytes (chunk-offset) :zlib t)))
 
@@ -191,7 +179,9 @@
         (pixel-size) (list pixels-per-unit-x pixels-per-unit-y unit-specifier)))
 
 (define-chunk-data (splt) (palette-name sample-depth palette-entries)
-  (setf palette-name (read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
+  (setf palette-name (read-string :bytes 79
+                                  :encoding :latin-1
+                                  :null-terminated-p t)
         sample-depth (ub8))
   (let* ((entry-bytes (ecase sample-depth (8 6) (16 10)))
          (sample-bytes (/ sample-depth 8))
@@ -216,8 +206,8 @@
         second (ub8)
         (last-modified) (list year month day hour minute second)))
 
-(define-chunk-data (itxt) (keyword compression-flag compression-method language-tag
-                                   translated-keyword text)
+(define-chunk-data (itxt) (keyword compression-flag compression-method
+                                   language-tag translated-keyword text)
   (setf keyword (read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
         compression-flag (ub8)
         compression-method (ub8)
@@ -233,11 +223,11 @@
         text-string (read-string :encoding :latin-1)
         (text) (list keyword text-string)))
 
-(define-chunk-data (ztxt) (keyword compression-method compressed-text-datastream)
+(define-chunk-data (ztxt) (keyword compression-method
+                                   compressed-text-datastream)
   (setf keyword (read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
         compression-method (ub8)
-        compressed-text-datastream (read-string :encoding :latin-1
-                                                :zlib t)
+        compressed-text-datastream (read-string :encoding :latin-1 :zlib t)
         (text) (list keyword compressed-text-datastream)))
 
 (define-chunk-data (unknown) ()

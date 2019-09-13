@@ -24,13 +24,10 @@
 (defmethod source-path ((source file-stream-source))
   (file-namestring (data source)))
 
-
 (defun vector-source-from-stream (stream count)
   (let ((buf (make-array count :element-type 'ub8)))
     (read-sequence buf stream)
-    (make-instance 'octet-vector-source :data buf
-                                        :end count)))
-
+    (make-instance 'octet-vector-source :data buf :end count)))
 
 (defmethod .source-region (source size &key &allow-other-keys)
   (assert (<= (+ (pos source) size)
@@ -54,17 +51,15 @@
       (vector-source-from-stream (data source) size)))
 
 (defmethod .source-region ((source file-stream-source) size &key no-copy)
-  (prog1
-      (make-instance 'file-stream-source
-                     :data (data source)
-                     :start (file-position (data source))
-                     :end (+ (file-position (data source)) size)
-                     :pos (file-position (data source)))
+  (prog1 (make-instance 'file-stream-source
+                        :data (data source)
+                        :start (file-position (data source))
+                        :end (+ (file-position (data source)) size)
+                        :pos (file-position (data source)))
     (unless no-copy
       (file-position (data source) (+ (file-position (data source)) size)))))
 
-(defmacro with-octet-vector-source ((source &key end)
-                                    &body body)
+(defmacro with-octet-vector-source ((source &key end) &body body)
   (alexandria:with-gensyms (v p e e1)
     `(let ((,v (data ,source))
            (,p (pos ,source))
@@ -360,8 +355,7 @@
                                  #'source-region))
              (unwind-protect
                   (macrolet ((nest (&body b)
-                               `(progn
-                                  ,@b)))
+                               `(progn ,@b)))
                     ,@(when end
                         `((when (end ,source)
                             (assert (<= ,end (end ,source))))

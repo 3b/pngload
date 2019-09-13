@@ -28,7 +28,8 @@
          :initform nil)))
 
 (defun load-stream (stream &key (decode t) flatten flip-y static-vector)
-  "load the given PNG datastream from STREAM. The following options are supported:
+  "load the given PNG datastream from STREAM. The following options are
+  supported:
 
 DECODE: When NIL, skip image decoding and only gather metadata.
 
@@ -36,8 +37,8 @@ FLATTEN: When non-NIL, read the image data into a 1-dimensional array.
 
 FLIP-Y: When non-NIL, flip the image data on its Y axis while reading.
 
-STATIC-VECTOR: When non-NIL, read the image data into a static-vectors array, suitable to be passed
-to a foreign library.
+STATIC-VECTOR: When non-NIL, read the image data into a static-vectors array,
+suitable to be passed to a foreign library.
 
 See LOAD-FILE if you want to load a PNG datastream from a file on disk."
   (let ((*png-source* (make-instance 'stream-source :data stream)))
@@ -50,7 +51,8 @@ See LOAD-FILE if you want to load a PNG datastream from a file on disk."
       *png-object*)))
 
 (defun load-file (path &key (decode t) flatten flip-y static-vector)
-  "Load the PNG file located at the given filesystem PATH. The following options are supported:
+  "Load the PNG file located at the given filesystem PATH. The following options
+  are supported:
 
 DECODE: When NIL, skip image decoding and only gather metadata.
 
@@ -58,8 +60,8 @@ FLATTEN: When non-NIL, read the image data into a 1-dimensional array.
 
 FLIP-Y: When non-NIL, flip the image data on its Y axis while reading.
 
-STATIC-VECTOR: When non-NIL, read the image data into a static-vectors array, suitable to be passed
-to a foreign library.
+STATIC-VECTOR: When non-NIL, read the image data into a static-vectors array,
+suitable to be passed to a foreign library.
 
 See LOAD-STREAM if you want to load a PNG datastream.
 "
@@ -75,36 +77,27 @@ See LOAD-STREAM if you want to load a PNG datastream.
               (*flip-y* flip-y)
               (*use-static-vector* static-vector))
           (setf (parse-tree *png-object*) (parse-datastream))
-          *png-object*))))
-  #++
-  (with-open-file (in path :element-type 'ub8)
-    (let ((*png-source* (make-instance 'file-stream-source
-                                       :data in
-                                       :end (file-length in))))
-      (let ((*png-object* (make-instance 'png-object))
-            (*decode-data* decode)
-            (*flatten* flatten)
-            (*flip-y* flip-y)
-            (*use-static-vector* static-vector))
-        (setf (parse-tree *png-object*) (parse-datastream))
-        *png-object*))))
+          *png-object*)))))
 
-(defmacro with-png-in-static-vector ((png-var path-or-stream &key (decode t) flip-y) &body body)
-  "Load a PNG image to a foreign array using static-vectors, automatically freeing memory when
-finished.
+(defmacro with-png-in-static-vector ((png-var path-or-stream
+                                      &key (decode t) flip-y) &body body)
+  "Load a PNG image to a foreign array using static-vectors, automatically
+freeing memory when finished.
 
 See LOAD-STREAM
 See LOAD-FILE"
   (alexandria:once-only (path-or-stream)
     `(let ((,png-var (if (streamp ,path-or-stream)
-                         (load-stream ,path-or-stream :decode ,decode
-                                                      :flip-y ,flip-y
-                                                      :static-vector t
-                                                      :flatten t)
-                         (load-file ,path-or-stream :decode ,decode
-                                                    :flip-y ,flip-y
-                                                    :static-vector t
-                                                    :flatten t))))
+                         (load-stream ,path-or-stream
+                                      :decode ,decode
+                                      :flip-y ,flip-y
+                                      :static-vector t
+                                      :flatten t)
+                         (load-file ,path-or-stream
+                                    :decode ,decode
+                                    :flip-y ,flip-y
+                                    :static-vector t
+                                    :flatten t))))
        (unwind-protect
             (progn ,@body)
          (when (and ,png-var (data ,png-var))
@@ -131,12 +124,12 @@ See LOAD-FILE"
         (flet ((data (y x c)
                  (row-major-aref data (+ (* y stride) (* x channels) c)))
                ((setf data) (v y x c)
-                 (setf (row-major-aref data (+ (* y stride) (* x channels) c)) v)))
-          (loop :with map = (make-grey-map bit-depth)
-                :for y :below height
-                :do (loop :for x :below width
-                          :do (loop :for c :below grey-channels
-                                    :for g = (data y x c)
-                                    :do (setf (data y x c)
-                                              (aref map g)))))))))
+                 (setf (row-major-aref data (+ (* y stride) (* x channels) c))
+                       v)))
+          (let ((map (make-grey-map bit-depth)))
+            (dotimes (y height)
+              (dotimes (x width)
+                (dotimes (c grey-channels)
+                  (let ((g (data y c x)))
+                    (setf (data y x c) (aref map g)))))))))))
   png)

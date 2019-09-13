@@ -252,9 +252,8 @@
                              v)))
                 (loop :for x :below width
                       :do (multiple-value-bind (b p) (floor x pixels-per-byte)
-                            (let ((i (ldb (byte bit-depth (- 8
-                                                             (* p bit-depth)
-                                                             bit-depth))
+                            (let ((i (ldb (byte bit-depth
+                                                (- 8 (* p bit-depth) bit-depth))
                                           (aref image-data (+ yb b)))))
                               (setf (data y x 0)
                                     (aref palette i 0)

@@ -37,11 +37,6 @@
 (defun chunk-size ()
   (chunk-length *chunk*))
 
-#++
-(defun chunk-offset ()
-  (cerror "continue" "chunk-offset")
-  (- (chunk-length *chunk*) (parsley:buffer-position)))
-
 (defun parse-chunk ()
   (let ((*chunk* (make-instance 'chunk)))
     (with-source (*png-source* :buffer nil)
