@@ -37,14 +37,17 @@
 (defun chunk-size ()
   (chunk-length *chunk*))
 
+#++
 (defun chunk-offset ()
+  (cerror "continue" "chunk-offset")
   (- (chunk-length *chunk*) (parsley:buffer-position)))
 
 (defun parse-chunk ()
   (let ((*chunk* (make-instance 'chunk)))
-    (with-slots (length type data crc) *chunk*
-      (setf length (parsley:read-uint-be 4)
-            type (parsley:read-uint-be 4)
-            data (parse-chunk-data (chunk-name *chunk*))
-            crc (parsley:read-uint-be 4)))
+    (with-source (*png-source* :buffer nil)
+      (with-slots (length type data crc) *chunk*
+        (setf length (ub32be)
+              type (ub32be)
+              data (nest (parse-chunk-data (chunk-name *chunk*)))
+              crc (ub32be))))
     *chunk*))

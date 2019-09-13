@@ -40,7 +40,7 @@ STATIC-VECTOR: When non-NIL, read the image data into a static-vectors array, su
 to a foreign library.
 
 See LOAD-FILE if you want to load a PNG datastream from a file on disk."
-  (parsley:with-buffer-read (:stream stream)
+  (let ((*png-source* (make-instance 'stream-source :data stream)))
     (let ((*png-object* (make-instance 'png-object))
           (*decode-data* decode)
           (*flatten* flatten)
@@ -63,8 +63,31 @@ to a foreign library.
 
 See LOAD-STREAM if you want to load a PNG datastream.
 "
+
+  (mmap:with-mmap (pointer fd size path)
+    (3bz:with-octet-pointer (*mmap-pointer* pointer size)
+      (let ((*png-source* (make-instance 'octet-pointer-source
+                                         :data pointer
+                                         :end size)))
+        (let ((*png-object* (make-instance 'png-object))
+              (*decode-data* decode)
+              (*flatten* flatten)
+              (*flip-y* flip-y)
+              (*use-static-vector* static-vector))
+          (setf (parse-tree *png-object*) (parse-datastream))
+          *png-object*))))
+  #++
   (with-open-file (in path :element-type 'ub8)
-    (load-stream in :decode decode :flatten flatten :flip-y flip-y :static-vector static-vector)))
+    (let ((*png-source* (make-instance 'file-stream-source
+                                       :data in
+                                       :end (file-length in))))
+      (let ((*png-object* (make-instance 'png-object))
+            (*decode-data* decode)
+            (*flatten* flatten)
+            (*flip-y* flip-y)
+            (*use-static-vector* static-vector))
+        (setf (parse-tree *png-object*) (parse-datastream))
+        *png-object*))))
 
 (defmacro with-png-in-static-vector ((png-var path-or-stream &key (decode t) flip-y) &body body)
   "Load a PNG image to a foreign array using static-vectors, automatically freeing memory when
