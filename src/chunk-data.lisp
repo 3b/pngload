@@ -73,7 +73,7 @@
 (defun source->3bz-context (s)
   (etypecase s ;; shouldn't get stream-source here
     (octet-vector-source
-     (3bz:make-octet-vector-context (data s)
+     (3bz:make-octet-vector-context (source-data s)
                                     :start (pos s)
                                     :end (end s)
                                     :offset (pos s)))
@@ -90,10 +90,10 @@
                                     :offset (pos s))
      (let ((buf (make-array (- (end s) (pos s))
                             :element-type 'ub8))
-           (p (file-position (data s))))
-       (file-position (data s) (pos s))
-       (read-sequence buf (data s))
-       (file-position (data s) p)
+           (p (file-position (source-data s))))
+       (file-position (source-data s) (pos s))
+       (read-sequence buf (source-data s))
+       (file-position (source-data s) p)
        (3bz:make-octet-vector-context buf)))))
 
 (define-chunk-data (iend) ()
