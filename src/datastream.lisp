@@ -25,8 +25,3 @@
         :when (eq (chunk-name chunk) :iend)
           :do (loop-finish)))
 
-(defmacro foo (slots)
-  `(symbol-macrolet ,(mapcar (lambda (x) (list x x)) slots)
-     (progn)))
-
-(foo (a b c))
