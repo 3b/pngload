@@ -20,5 +20,24 @@
 (defvar *use-static-vector*)
 (defvar *mmap-pointer*)
 
+(defstruct (png (:conc-name nil))
+  parse-tree
+  width
+  height
+  bit-depth
+  color-type
+  (palette-count 0)
+  palette
+  (gamma 1.0)
+  transparency
+  rendering-intent
+  compression-method
+  interlace-method
+  filter-method
+  (pixel-size '(:x 1 :y 1 :unit :unknown))
+  last-modified
+  text
+  data)
+
 (defun get-path ()
   (source-path *png-source*))

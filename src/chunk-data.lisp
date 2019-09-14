@@ -9,6 +9,7 @@
              ((,chunk-type (eql ,(alexandria:make-keyword type))) ,chunk)
            (let ((,type ,chunk)
                  (,chunk-data (,(alexandria:symbolicate '#:make- struct-name))))
+             (declare (ignorable ,type))
              (symbol-macrolet ,(mapcar
                                 (lambda (x)
                                   (list x

@@ -1,24 +1,5 @@
 (in-package #:pngload)
 
-(defstruct (png (:conc-name nil))
-  parse-tree
-  width
-  height
-  bit-depth
-  color-type
-  (palette-count 0)
-  palette
-  (gamma 1.0)
-  transparency
-  rendering-intent
-  compression-method
-  interlace-method
-  filter-method
-  (pixel-size '(:x 1 :y 1 :unit :unknown))
-  last-modified
-  text
-  data)
-
 (defun load-stream (stream &key (decode t) flatten flip-y static-vector)
   "load the given PNG datastream from STREAM. The following options are
   supported:
