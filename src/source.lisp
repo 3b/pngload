@@ -133,22 +133,19 @@
            ,@(when end
                `((setf (end ,source) ,e1))))))))
 
-;; todo: VOPs for these?
-(declaim (inline be16 be32))
+(declaim (inline be16))
 (defun be16 (x)
   (declare (type ub16 x))
   #+little-endian
-  (+ (ldb (byte 8 8) x)
-     (ash (ldb (byte 8 0) x) 8))
+  (swap-bytes:swap-bytes-16 x)
   #+big-endian
   x)
+
+(declaim (inline be32))
 (defun be32 (x)
   (declare (type ub32 x))
   #+little-endian
-  (+ (ldb (byte 8 24) x)
-     (ash (ldb (byte 8 16) x) 8)
-     (ash (ldb (byte 8 8) x) 16)
-     (ash (ldb (byte 8 0) x) 24))
+  (swap-bytes:swap-bytes-32 x)
   #+big-endian
   x)
 

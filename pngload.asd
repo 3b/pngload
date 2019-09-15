@@ -12,7 +12,8 @@
                #:3bz
                #:cffi
                #:mmap
-               #:static-vectors)
+               #:static-vectors
+               #:swap-bytes)
   :pathname "src"
   :serial t
   :components
