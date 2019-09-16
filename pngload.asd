@@ -9,17 +9,13 @@
   :bug-tracker "https://github.com/HackerTheory/pngload/issues"
   :encoding :utf-8
   :depends-on (#:alexandria
-               #:3bz
-               #:cffi
-               #:mmap
-               #:static-vectors
-               #:swap-bytes)
+               #:parsley
+               #:static-vectors)
   :pathname "src"
   :serial t
   :components
   ((:file "package")
    (:file "common")
-   (:file "source")
    (:file "properties")
    (:file "conditions")
    (:file "chunk")
