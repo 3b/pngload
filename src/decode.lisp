@@ -50,69 +50,88 @@
         (apply #'static-vectors:make-static-vector args)
         (apply #'make-array args))))
 
-(declaim (inline unfilter-sub))
-(defun unfilter-sub (x data start pixel-bytes)
-  (declare (ub8a1d data)
-           (ub8 pixel-bytes)
-           (ub32 x)
-           (fixnum start)
+;;;
+;;; Following the PNG sW3 spec, the pixels considered when performing filter
+;;; Are described in this diagram:
+;;;   +-------+
+;;;   | c | b |
+;;;   +---+---+
+;;;   | a | x |
+;;;   +---+---+
+;;; Where x is the 'current' pixel
+;;;
+(defun unfilter-row-sub (y data row-start row-bytes pixel-bytes)
+  (declare (type ub8a1d data)
+           (type (and fixnum (integer 0)) y row-start)
+           (type (and fixnum (integer 1)) row-bytes pixel-bytes)
+           (ignore y)
            (optimize speed))
-  (if (>= x pixel-bytes)
-      (aref data (+ start (- x pixel-bytes)))
-      0))
+  (loop
+    :for x :from (+ row-start pixel-bytes) :below (+ row-start (1- row-bytes))
+    :for a fixnum := (- x pixel-bytes)
+    :do (setf (aref data x) (ldb (byte 8 0) (+ (aref data x) (aref data a))))))
 
-(declaim (inline unfilter-up))
-(defun unfilter-up (x y data start-up)
-  (declare (ub8a1d data)
-           (ub32 x y)
-           (fixnum start-up)
+(defun unfilter-row-up (y data row-start row-bytes pixel-bytes)
+  (declare (type ub8a1d data)
+           (type (and fixnum (integer 0)) y row-start)
+           (type (and fixnum (integer 1)) row-bytes  pixel-bytes)
+           (ignore pixel-bytes)
+           (optimize speed))
+  (when (>= y 1)
+    (loop
+      :for x :from row-start :below (+ row-start (1- row-bytes))
+      :for b := (- x row-bytes)
+      :do (setf (aref data x) (ldb (byte 8 0) (+ (aref data x) (aref data b)))))))
+
+(defun unfilter-row-average (y data row-start row-bytes pixel-bytes)
+  (declare (type ub8a1d data)
+           (type (and fixnum (integer 0)) y row-start)
+           (type (and fixnum (integer 1)) row-bytes  pixel-bytes)
+           (optimize speed))
+  (loop
+    :for x fixnum :from row-start :below (+ row-start (1- row-bytes))
+    :for a fixnum := (- x pixel-bytes)
+    :for b fixnum := (- x row-bytes)
+    :do (setf (aref data x)
+              (ldb (byte 8 0)
+                   (+ (aref data x)
+                      (floor (+ (if (>= a row-start) (aref data a) 0)
+                                (if (>= y 1) (aref data b) 0))
+                             2))))))
+
+(defun unfilter-row-paeth (y data row-start row-bytes pixel-bytes)
+  (declare (type ub8a1d data)
+           (type (and fixnum (integer 0)) y row-start)
+           (type (and fixnum (integer 1)) row-bytes  pixel-bytes)
            (optimize speed))
   (if (zerop y)
-      0
-      (aref data (+ x start-up))))
-
-(declaim (inline unfilter-average))
-(defun unfilter-average (x y data start start-up pixel-bytes)
-  (declare (ub8a1d data)
-           (ub32 x y)
-           (fixnum start start-up)
-           (ub8 pixel-bytes)
-           (optimize speed))
-  (let ((a (unfilter-sub x data start pixel-bytes))
-        (b (unfilter-up x y data start-up)))
-    (declare (ub8 a b))
-    (floor (+ a b) 2)))
-
-(declaim (inline unfilter-paeth))
-(defun unfilter-paeth (x y data start-left start-up pixel-bytes)
-  (declare (ub8a1d data)
-           (ub32 x y)
-           (fixnum start-left start-up)
-           (ub8 pixel-bytes)
-           (optimize speed))
-  (let* ((a (unfilter-sub x data start-left pixel-bytes))
-         (b (unfilter-up x y data start-up))
-         (c (if (plusp y)
-                (unfilter-sub x data start-up pixel-bytes)
-                0))
-         (p (- (+ a b) c))
-         (pa (abs (- p a)))
-         (pb (abs (- p b)))
-         (pc (abs (- p c))))
-    (cond ((and (<= pa pb) (<= pa pc)) a)
-          ((<= pb pc) b)
-          (t c))))
-
-(declaim (inline unfilter-byte))
-(defun unfilter-byte (filter x y data start start-up pixel-bytes)
-  (ecase filter
-    (#.+filter-type-none+ 0)
-    (#.+filter-type-sub+ (unfilter-sub x data start pixel-bytes))
-    (#.+filter-type-up+ (unfilter-up x y data start-up))
-    (#.+filter-type-average+
-     (unfilter-average x y data start start-up pixel-bytes))
-    (#.+filter-type-paeth+
-     (unfilter-paeth x y data start start-up pixel-bytes))))
+      ;; paeth on the first row is equivalent to a sub
+      (unfilter-row-sub y data row-start row-bytes pixel-bytes)
+      (loop
+        :initially
+           ;; Handle the first column specifically so we don't have to worry about it later
+           (loop
+             :for x :from row-start :below (+ row-start pixel-bytes)
+             :do (setf (aref data x) (ldb (byte 8 0) (+ (aref data x) (aref data (- x row-bytes))))))
+        :for x fixnum :from (+ row-start pixel-bytes) :below (+ row-start (1- row-bytes))
+        :for a fixnum := (- x pixel-bytes)
+        :for b fixnum := (- x row-bytes)
+        :for c fixnum := (- b pixel-bytes)
+        :do (setf (aref data x)
+                  (ldb (byte 8 0)
+                       (+ (aref data x)
+                          ;; We know we're not on the first row or column so we can just branch off the values
+                          ;; and not their positions
+                          (let* ((av (aref data a))
+                                 (bv (aref data b))
+                                 (cv (aref data c))
+                                 (p (- (+ av bv) cv))
+                                 (pa (abs (- p av)))
+                                 (pb (abs (- p bv)))
+                                 (pc (abs (- p cv))))
+                            (cond ((and (<= pa pb) (<= pa pc)) av)
+                                  ((<= pb pc) bv)
+                                  (t cv)))))))))
 
 (defun unfilter (data width height start)
   (declare (ub32 width height)
@@ -121,18 +140,28 @@
   (loop :with pixel-bytes = (get-pixel-bytes)
         :with scanline-bytes fixnum = (get-scanline-bytes width)
         :with row-bytes = (1+ scanline-bytes)
-        :for y :below height
-        :for in-start :from start :by row-bytes
-        :for left-start :from start :by scanline-bytes
-        :for up-start :from (- start scanline-bytes) :by scanline-bytes
-        :for filter = (aref data in-start)
-        :do (loop :for xs fixnum :from (1+ in-start)
-                  :for xo fixnum :from left-start
-                  :for x fixnum :below scanline-bytes
-                  :for sample = (aref data xs)
-                  :for out = (unfilter-byte filter x y data left-start up-start
-                                            pixel-bytes)
-                  :do (setf (aref data xo) (ldb (byte 8 0) (+ sample out))))))
+        :for y fixnum :below height
+        :for in-start fixnum :from start :by row-bytes
+        :for row-start fixnum :from (1+ start) :by row-bytes
+        :do
+           (ecase (aref data in-start)
+             (#.+filter-type-none+ ; nothing tbd
+              nil)
+             (#.+filter-type-sub+
+              (unfilter-row-sub y data row-start row-bytes pixel-bytes))
+             (#.+filter-type-up+
+              (unfilter-row-up y data row-start row-bytes pixel-bytes))
+             (#.+filter-type-average+
+              (unfilter-row-average y data row-start row-bytes pixel-bytes))
+             (#.+filter-type-paeth+
+              (unfilter-row-paeth y data row-start row-bytes pixel-bytes)))
+        :finally
+           ;; Now compact row data by removing the filter bytes
+           (loop
+             :for y :below height
+             :for dst-data :from start :by scanline-bytes
+             :for row-start fixnum :from (1+ start) :by row-bytes
+             :do (replace data data :start1 dst-data :start2 row-start :end2 (+ row-start scanline-bytes)))))
 
 (defmacro maybe-flatten (dims bit-depth)
   (let ((nd-fn-sym (intern (format nil "COPY/~dD/~d" dims bit-depth)))
