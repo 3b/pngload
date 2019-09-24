@@ -4,7 +4,7 @@
 (defvar *flatten* nil)
 
 (defun get-image-bytes ()
-  (with-slots (width height interlace-method) *png-object*
+  (with-slots (width height interlace-method) *png*
     (ecase interlace-method
       (:null
        (+ height (* height (get-scanline-bytes width))))
@@ -13,20 +13,19 @@
              :sum (* height (1+ (get-scanline-bytes width))))))))
 
 (defun get-image-raw-channels ()
-  (with-slots (color-type) *png-object*
-    (ecase color-type
-      ((:truecolour :indexed-colour) 3)
-      (:truecolour-alpha 4)
-      (:greyscale-alpha 2)
-      (:greyscale 1))))
+  (ecase (color-type *png*)
+    ((:truecolour :indexed-colour) 3)
+    (:truecolour-alpha 4)
+    (:greyscale-alpha 2)
+    (:greyscale 1)))
 
 (defun get-image-channels ()
-  (with-slots (color-type transparency) *png-object*
-    (let ((channels (get-image-raw-channels)))
-      (when transparency
-        (assert (member color-type '(:truecolour :indexed-colour :greyscale)))
-        (incf channels))
-      channels)))
+  (let ((channels (get-image-raw-channels)))
+    (when (transparency *png*)
+      (assert (member (color-type *png*)
+                      '(:truecolour :indexed-colour :greyscale)))
+      (incf channels))
+    channels))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (alexandria:define-constant +filter-type-none+ 0)
@@ -36,19 +35,20 @@
   (alexandria:define-constant +filter-type-paeth+ 4))
 
 (defun allocate-image-data ()
-  (with-slots (width height color-type bit-depth transparency) *png-object*
-    (let* ((channels (get-image-channels))
-           (args (list (if *flatten*
-                           (* width height channels)
-                           `(,height ,width ,@(when (> channels 1)
-                                                (list channels))))
-                       :element-type (ecase bit-depth
-                                       ((1 2 4 8) 'ub8)
-                                       (16 'ub16)))))
-      (when *use-static-vector* (assert *flatten*))
-      (if *use-static-vector*
-          (apply #'static-vectors:make-static-vector args)
-          (apply #'make-array args)))))
+  (let* ((width (width *png*))
+         (height (height *png*))
+         (channels (get-image-channels))
+         (args (list (if *flatten*
+                         (* width height channels)
+                         `(,height ,width ,@(when (> channels 1)
+                                              (list channels))))
+                     :element-type (ecase (bit-depth *png*)
+                                     ((1 2 4 8) 'ub8)
+                                     (16 'ub16)))))
+    (when *use-static-vector* (assert *flatten*))
+    (if *use-static-vector*
+        (apply #'static-vectors:make-static-vector args)
+        (apply #'make-array args))))
 
 (declaim (inline unfilter-sub))
 (defun unfilter-sub (x data start pixel-bytes)
@@ -132,8 +132,7 @@
                   :for sample = (aref data xs)
                   :for out = (unfilter-byte filter x y data left-start up-start
                                             pixel-bytes)
-                  :do (setf (aref data xo)
-                            (ldb (byte 8 0) (+ sample out))))))
+                  :do (setf (aref data xo) (ldb (byte 8 0) (+ sample out))))))
 
 (defmacro maybe-flatten (dims bit-depth)
   (let ((nd-fn-sym (intern (format nil "COPY/~dD/~d" dims bit-depth)))
@@ -164,7 +163,7 @@
                      (aref image-data s)))))
 
 (defmacro copy/8/flip ()
-  `(with-slots (width height bit-depth) *png-object*
+  `(with-slots (width height bit-depth) *png*
      (let* ((channels (get-image-raw-channels))
             (stride (* channels width))
             (ssize (array-total-size image-data))
@@ -195,7 +194,7 @@
                                  (aref image-data (1+ s))))))))
 
 (defmacro copy/16/flip ()
-  `(with-slots (width height bit-depth) *png-object*
+  `(with-slots (width height bit-depth) *png*
      (let* ((channels (get-image-raw-channels))
             (stride (* channels width))
             (ssize (array-total-size image-data))
@@ -218,7 +217,7 @@
                                           (aref image-data (1+ s)))))))))))
 
 (defun copy/pal/8 (image-data)
-  (with-slots (data palette transparency) *png-object*
+  (with-slots (data palette transparency) *png*
     (macrolet ((copy ()
                  `(loop :with c = (get-image-channels)
                         :for d :below (array-total-size data) :by c
@@ -239,7 +238,7 @@
           (locally (declare (ub8a3d data)) (copy))))))
 
 (defun copy/pal/sub (image-data)
-  (with-slots (width height bit-depth palette transparency data) *png-object*
+  (with-slots (width height bit-depth palette transparency data) *png*
     (loop :with scanline-bytes = (get-scanline-bytes width)
           :with pixels-per-byte = (/ 8 bit-depth)
           :with channels = (get-image-channels)
@@ -252,9 +251,8 @@
                              v)))
                 (loop :for x :below width
                       :do (multiple-value-bind (b p) (floor x pixels-per-byte)
-                            (let ((i (ldb (byte bit-depth (- 8
-                                                             (* p bit-depth)
-                                                             bit-depth))
+                            (let ((i (ldb (byte bit-depth
+                                                (- 8 (* p bit-depth) bit-depth))
                                           (aref image-data (+ yb b)))))
                               (setf (data y x 0)
                                     (aref palette i 0)
@@ -269,7 +267,7 @@
                                           255))))))))))
 
 (defun copy/2d/sub (image-data)
-  (with-slots (width bit-depth data) *png-object*
+  (with-slots (width bit-depth data) *png*
     (declare (ub8a data))
     (loop :with s = 0
           :with x = 0
@@ -316,8 +314,8 @@
                                       ,opaque)))))
 
 (defun flip (image)
-  (let ((w (width *png-object*))
-        (h (height *png-object*))
+  (let ((w (width *png*))
+        (h (height *png*))
         (c (get-image-channels)))
     (let ((stride (* w c))
           (end (array-total-size image)))
@@ -350,11 +348,11 @@
     (flip data)))
 
 (defun decode ()
-  (let ((image-data (data *png-object*)))
+  (let ((image-data (data *png*)))
     (declare (ub8a1d image-data))
     (with-slots (width height bit-depth interlace-method color-type
                  transparency data)
-        *png-object*
+        *png*
       (if (eq interlace-method :null)
           (unfilter image-data width height 0)
           (setf image-data (deinterlace-adam7 image-data)))
@@ -389,4 +387,4 @@
              (8 (copy/pal/8 image-data))
              ((1 2 4) (copy/pal/sub image-data)))
            (maybe-flip data)))))
-    *png-object*))
+    *png*))
