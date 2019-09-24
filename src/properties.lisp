@@ -1,4 +1,4 @@
-(in-package #:pngload)
+(in-package #:pngload-fast)
 
 (defun get-channel-count ()
   (ecase (color-type *png*)

@@ -1,4 +1,4 @@
-(in-package #:pngload)
+(in-package #:pngload-fast)
 
 (defvar *decode-data* nil)
 (defvar *flatten* nil)

@@ -1,4 +1,4 @@
-(in-package #:pngload)
+(in-package #:pngload-fast)
 
 (defun load-stream (stream &key (decode t) flatten flip-y static-vector)
   "load the given PNG datastream from STREAM. The following options are

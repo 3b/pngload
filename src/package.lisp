@@ -1,6 +1,6 @@
 (in-package #:cl-user)
 
-(defpackage #:pngload
+(defpackage #:pngload-fast
   (:use #:cl)
   (:export
    #:png

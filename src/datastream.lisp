@@ -1,4 +1,4 @@
-(in-package #:pngload)
+(in-package #:pngload-fast)
 
 (defstruct datastream
   signature
@@ -24,4 +24,3 @@
         :collect chunk
         :when (eq (chunk-name chunk) :iend)
           :do (loop-finish)))
-

@@ -1,4 +1,4 @@
-(in-package #:pngload)
+(in-package #:pngload-fast)
 
 (defmacro define-chunk-data ((type &key (buffer t)) slots &body body)
   (alexandria:with-gensyms (chunk chunk-type chunk-data)

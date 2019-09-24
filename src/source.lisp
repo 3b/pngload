@@ -1,4 +1,4 @@
-(in-package :pngload)
+(in-package :pngload-fast)
 
 (defclass source ()
   ((start :reader start :initform 0 :initarg :start)
