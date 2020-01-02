@@ -77,8 +77,8 @@
         :do (loop :for sx :below (* pixel-bytes w) :by pixel-bytes
                   :for x :from (* x1 pixel-bytes) :by (* dx pixel-bytes)
                   :do (loop :for i :below pixel-bytes
-                            do (setf (aref dest (+ dyb x i))
-                                     (aref source (+ syb sx i)))))))
+                            :do (setf (aref dest (+ dyb x i))
+                                      (aref source (+ syb sx i)))))))
 
 (defun deinterlace-adam7 (data)
   (with-slots (width height bit-depth) *png*
