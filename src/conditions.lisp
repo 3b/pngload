@@ -1,4 +1,4 @@
-(in-package #:pngload-fast)
+(in-package #:pngload)
 
 (define-condition png-warning (warning) ())
 

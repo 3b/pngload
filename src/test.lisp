@@ -2,7 +2,7 @@
 
 (defpackage #:pngload.test
   (:use #:cl
-        #:pngload-fast)
+        #:pngload)
   (:export #:test-images
            #:test-read-times))
 
@@ -14,7 +14,7 @@
 
 (defun get-path ()
   (uiop:ensure-directory-pathname
-   (asdf:system-relative-pathname :pngload-fast "test")))
+   (asdf:system-relative-pathname :pngload "test")))
 
 (defun get-image-name (file)
   (namestring
@@ -73,7 +73,7 @@
                    (when *break-on-failure*
                      (break "~s failed~@[: ~s~] ~s" (get-image-name file)
                             error
-                            (and image (color-type image))
+                            (and image (pngload:color-type image))
                             image ref))
                    (push (get-image-name file) *failed*))))))
       (map nil #'test-image files)
@@ -104,6 +104,6 @@
             (local-time:timestamp-difference (local-time:now) start))))
 
 (defun test-read-times (file &key (count 1))
-  (test-read-time "pngload-fast" #'load-file file count)
+  (test-read-time "pngload" #'load-file file count)
   (test-read-time "png-read" #'png-read:read-png-file file count)
   (test-read-time "opticl" #'opticl:read-image-file file count))

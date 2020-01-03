@@ -1,4 +1,4 @@
-(in-package #:pngload-fast)
+(in-package #:pngload)
 
 (deftype ub8 () '(unsigned-byte 8))
 (deftype ub16 () '(unsigned-byte 16))
@@ -13,31 +13,13 @@
 (deftype ub16a2d () '(simple-array ub16 (* *)))
 (deftype ub16a3d () '(simple-array ub16 (* * *)))
 
-(defvar *png*)
-(defvar *png-source*)
+(defvar *png-object*)
 (defvar *decode-data*)
 (defvar *flip-y*)
 (defvar *use-static-vector*)
-(defvar *mmap-pointer*)
-
-(defstruct (png (:conc-name nil))
-  parse-tree
-  width
-  height
-  bit-depth
-  color-type
-  (palette-count 0)
-  palette
-  (gamma 1.0)
-  transparency
-  rendering-intent
-  compression-method
-  interlace-method
-  filter-method
-  (pixel-size '(:x 1 :y 1 :unit :unknown))
-  last-modified
-  text
-  data)
 
 (defun get-path ()
-  (source-path *png-source*))
+  (let ((stream (parsley:buffer-stream)))
+    (typecase stream
+      (file-stream (pathname stream))
+      (t :IN-MEMORY))))
