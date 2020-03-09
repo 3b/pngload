@@ -101,7 +101,7 @@
       (funcall func file))
     (format t "~A: ~,3fs~%"
             library-name
-            (local-time:timestamp-difference (local-time:now) start))))
+            (float (local-time:timestamp-difference (local-time:now) start)))))
 
 (defun test-read-times (file &key (count 1))
   (test-read-time "pngload" #'load-file file count)

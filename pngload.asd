@@ -10,8 +10,8 @@
   :encoding :utf-8
   :depends-on (#:alexandria
                #:3bz
-               #:cffi
-               #:mmap
+               (:feature (:not :mezzano) cffi)
+               (:feature (:not :mezzano) mmap)
                #:static-vectors
                #:swap-bytes)
   :pathname "src"
@@ -20,6 +20,8 @@
   ((:file "package")
    (:file "common")
    (:file "source")
+   (:file "source-noffi" :if-feature :mezzano)
+   (:file "source-ffi" :if-feature (:not :mezzano))
    (:file "properties")
    (:file "conditions")
    (:file "chunk")
@@ -27,4 +29,6 @@
    (:file "datastream")
    (:file "deinterlace")
    (:file "decode")
+   (:file "png-nommap" :if-feature :mezzano)
+   (:file "png-mmap" :if-feature (:not :mezzano))
    (:file "png")))
