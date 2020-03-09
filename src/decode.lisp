@@ -3,6 +3,9 @@
 (defvar *decode-data* nil)
 (defvar *flatten* nil)
 
+(defmacro %row-major-aref (array index)
+  `(row-major-aref ,array (the fixnum ,index)))
+
 (defun get-image-bytes ()
   (with-slots (width height interlace-method) *png*
     (ecase interlace-method
@@ -185,10 +188,10 @@
            (,nd-fn-sym)))))
 
 (defmacro copy/8 ()
-  `(loop :for d :below (array-total-size data)
-         :for s :below (array-total-size image-data)
+  `(loop :for d fixnum :below (array-total-size data)
+         :for s fixnum :below (array-total-size image-data)
          :do (locally (declare (optimize speed (safety 0)))
-               (setf (row-major-aref data d)
+               (setf (%row-major-aref data d)
                      (aref image-data s)))))
 
 (defmacro copy/8/flip ()
@@ -210,7 +213,7 @@
                          :for d fixnum :from d1 :below dsize
                          :repeat stride
                          :do (locally (declare (optimize speed (safety 0)))
-                               (setf (row-major-aref data d)
+                               (setf (%row-major-aref data d)
                                      (aref image-data s)))))))))
 
 (defmacro copy/16 ()
@@ -218,7 +221,7 @@
           (loop :for d :below (array-total-size data)
                 :for s :below (array-total-size image-data) :by 2
                 :do (locally (declare (optimize speed (safety 0)))
-                      (setf (row-major-aref data d)
+                      (setf (%row-major-aref data d)
                             (dpb (aref image-data s) (byte 8 8)
                                  (aref image-data (1+ s))))))))
 
@@ -241,7 +244,7 @@
                          :for d fixnum :from d1 :below dsize
                          :repeat stride
                          :do (locally (declare (optimize speed (safety 0)))
-                               (setf (row-major-aref data d)
+                               (setf (%row-major-aref data d)
                                      (dpb (aref image-data s) (byte 8 8)
                                           (aref image-data (1+ s)))))))))))
 
@@ -251,14 +254,14 @@
                  `(loop :with c = (get-image-channels)
                         :for d :below (array-total-size data) :by c
                         :for s :across image-data
-                        :do  (setf (row-major-aref data (+ d 0))
+                        :do  (setf (%row-major-aref data (+ d 0))
                                    (aref palette s 0)
-                                   (row-major-aref data (+ d 1))
+                                   (%row-major-aref data (+ d 1))
                                    (aref palette s 1)
-                                   (row-major-aref data (+ d 2))
+                                   (%row-major-aref data (+ d 2))
                                    (aref palette s 2))
                              (when transparency
-                               (setf (row-major-aref data (+ d 3))
+                               (setf (%row-major-aref data (+ d 3))
                                      (if (array-in-bounds-p transparency s)
                                          (aref transparency s)
                                          255))))))
@@ -274,8 +277,8 @@
           :with dstride = (* width channels)
           :for y :below height
           :for yb = (* y scanline-bytes)
-          :do (flet (((setf data) (v y x c)
-                       (setf (row-major-aref
+          :do (flet (((setf %data) (v y x c)
+                       (setf (%row-major-aref
                               data (+ (* y dstride) (* x channels) c))
                              v)))
                 (loop :for x :below width
@@ -283,14 +286,14 @@
                             (let ((i (ldb (byte bit-depth
                                                 (- 8 (* p bit-depth) bit-depth))
                                           (aref image-data (+ yb b)))))
-                              (setf (data y x 0)
+                              (setf (%data y x 0)
                                     (aref palette i 0)
-                                    (data y x 1)
+                                    (%data y x 1)
                                     (aref palette i 1)
-                                    (data y x 2)
+                                    (%data y x 2)
                                     (aref palette i 2))
                               (when transparency
-                                (setf (data y x 3)
+                                (setf (%data y x 3)
                                       (if (array-in-bounds-p transparency i)
                                           (aref transparency i)
                                           255))))))))))
@@ -309,7 +312,7 @@
           :while (< (+ s bx) ssize)
           :when (zerop p)
             :do (setf b (aref image-data (+ s bx)))
-          :do (setf (row-major-aref data d)
+          :do (setf (%row-major-aref data d)
                     (ldb (byte bit-depth (- 8 p bit-depth)) b))
               (incf p bit-depth)
               (incf x)
@@ -333,11 +336,11 @@
          :for d :from (- (array-total-size data) c) :downto 0 :by c
          :do (loop :for i :below (1- c)
                    :for k :across key
-                   :for v = (row-major-aref data (+ s i))
-                   :do (setf (row-major-aref data (+ d i)) v)
+                   :for v = (%row-major-aref data (+ s i))
+                   :do (setf (%row-major-aref data (+ d i)) v)
                    :count (= v k) :into matches
-                   :collect (list v k matches) :into foo
-                   :finally (setf (row-major-aref data (+ d (1- c)))
+                   ;:collect (list v k matches) :into foo
+                   :finally (setf (%row-major-aref data (+ d (1- c)))
                                   (if (= matches (1- c))
                                       0
                                       ,opaque)))))
@@ -360,8 +363,8 @@
                                                  (declare
                                                   (optimize speed (safety 0))))
                                                '(progn))
-                                         (rotatef (row-major-aref image x1)
-                                                  (row-major-aref
+                                         (rotatef (%row-major-aref image x1)
+                                                  (%row-major-aref
                                                    image x2)))))))
         (typecase image
           (ub8a3d (f))
