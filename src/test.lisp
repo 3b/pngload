@@ -90,10 +90,11 @@
          (r (list (test-images*)
                   (test-images* :flip t)
                   (test-images* :flatten t)
-                  (test-images* :flip t :flatten t))))
-    (format t "~%Total: Passed: ~s / Failed: ~s~%"
-            (reduce '+ (mapcar #'first r))
-            (reduce '+ (mapcar #'second r)))))
+                  (test-images* :flip t :flatten t)))
+         (pass (reduce '+ (mapcar #'first r)))
+         (fail (reduce '+ (mapcar #'second r))))
+    (format t "~%Total: Passed: ~s / Failed: ~s~%" pass fail)
+    (values pass fail)))
 
 (defun test-read-time (library-name func file count)
   (let ((start (local-time:now)))
