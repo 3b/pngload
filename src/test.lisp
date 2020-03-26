@@ -73,7 +73,7 @@
                    (when *break-on-failure*
                      (break "~s failed~@[: ~s~] ~s" (get-image-name file)
                             error
-                            (and image (pngload:color-type image))
+                            (and image (color-type image))
                             image ref))
                    (push (get-image-name file) *failed*))))))
       (map nil #'test-image files)
