@@ -12,7 +12,8 @@
                #:3bz
                (:feature (:not :mezzano) cffi)
                (:feature (:not :mezzano) mmap)
-               #:static-vectors
+               (:feature (:and (:not :clisp) (:not :abcl))
+                         #:static-vectors)
                #:swap-bytes)
   :pathname "src"
   :serial t

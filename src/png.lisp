@@ -24,6 +24,7 @@ See LOAD-FILE if you want to load a PNG datastream from a file on disk."
       *png*)))
 
 
+#- (or clisp abcl)
 (defmacro with-png-in-static-vector ((png-var path-or-stream
                                       &key (decode t) flip-y) &body body)
   "Load a PNG image to a foreign array using static-vectors, automatically

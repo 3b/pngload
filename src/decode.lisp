@@ -49,9 +49,13 @@
                                      ((1 2 4 8) 'ub8)
                                      (16 'ub16)))))
     (when *use-static-vector* (assert *flatten*))
+    #- (or clisp abcl)
     (if *use-static-vector*
         (apply #'static-vectors:make-static-vector args)
-        (apply #'make-array args))))
+        (apply #'make-array args))
+    #+ (or clisp abcl)
+    (apply #'make-array args)
+    ))
 
 ;;;
 ;;; Following the PNG sW3 spec, the pixels considered when performing filter
