@@ -4,7 +4,8 @@
   (:use #:cl
         #:pngload)
   (:export #:test-images
-           #:test-read-times))
+           #:test-read-times
+           #:run-tests-for-ci))
 
 (in-package #:pngload.test)
 
