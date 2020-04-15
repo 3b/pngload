@@ -124,15 +124,15 @@ jobs:
     - name: load code from clean fasl cache
       shell: bash
       run: |
-        ros -e '(handler-bind (#+asdf3.2(asdf:bad-SYSTEM-NAME (function MUFFLE-WARNING))) (handler-case (ql:quickload :pngload.test) (error (a) (format t "caught error ~s~%~a~%" a a) (uiop:quit 123))))'
+        ros -e '(handler-bind (#+asdf3.2(asdf:bad-SYSTEM-NAME (function MUFFLE-WARNING))) (handler-case (ql:quickload :pngload.test #+cmucl :silent #+cmucl t) (error (a) (format t "caught error ~s~%~a~%" a a) (uiop:quit 123))))'
 
     - name: load code from fasls and run tests
       shell: bash
       run: |
-        ros -e '(handler-bind (#+asdf3.2(asdf:bad-system-name (function muffle-warning))) (handler-case (ql:quickload :pngload.test) (error (a) (format t "caught error ~s~%~a~%" a a) (uiop:quit 123))))' -e '(pngload.test:run-tests-for-ci)'
+        ros -e '(handler-bind (#+asdf3.2(asdf:bad-system-name (function muffle-warning))) (handler-case (ql:quickload :pngload.test #+cmucl :silent #+cmucl t) (error (a) (format t "caught error ~s~%~a~%" a a) (uiop:quit 123))))' -e '(pngload.test:run-tests-for-ci)'
 
     - name: test read times
       shell: bash
       run: |
         curl http://3bb.cc/tmp/fft.png -o fft.png
-        ros -e "(ql:quickload 'pngload.test)" -e '(pngload.test:test-read-times "fft.png" :count 10)'
+        ros -e "(ql:quickload 'pngload.test #+cmucl :silent #+cmucl t)" -e '(pngload.test:test-read-times "fft.png" :count 10)'
