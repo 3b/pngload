@@ -4,7 +4,8 @@
   (:use #:cl
         #:pngload)
   (:export #:test-images
-           #:test-read-times))
+           #:test-read-times
+           #:run-tests-for-ci))
 
 (in-package #:pngload.test)
 
@@ -108,3 +109,16 @@
   (test-read-time "pngload" #'load-file file count)
   (test-read-time "png-read" #'png-read:read-png-file file count)
   (test-read-time "opticl" #'opticl:read-image-file file count))
+
+(defun run-tests-for-ci ()
+  (handler-case
+      (progn
+        ;; add any testing that should run in CI here
+        (multiple-value-bind (pass fail) (test-images)
+          ;; if tests fail, exit with non-zero code
+          (unless (zerop fail)
+            (format t "~s/~s tests failed~%" fail (+ pass fail))
+            (uiop:quit 124))))
+    (error (a)
+      (format t "caught error ~s~%~a~%" a a)
+      (uiop:quit 125))))
