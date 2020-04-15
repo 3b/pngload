@@ -15,9 +15,6 @@ jobs:
         lisp: [sbcl-bin,sbcl,ccl,ccl32,ecl,clisp,allegro,cmucl]
         os: [ubuntu-latest, macos-latest, windows-latest]
         exclude:
-          # ccl doesn't seem to work on osx?
-            - os: macos-latest
-              lisp: ccl
           # msys or something doesn't work on windows runners?
             - os: windows-latest
               lisp: ecl
@@ -38,6 +35,12 @@ jobs:
               lisp: ccl
             - os: windows-latest
               lisp: ccl32
+          # ccl doesn't seem to work on osx?
+            - os: macos-latest
+              lisp: ccl
+          # CFFI requires CLISP compiled with dynamic FFI support.
+            - os: macos-latest
+              lisp: clisp
           # skip 32bit lisps on osx
             - os: macos-latest
               lisp: sbcl32
