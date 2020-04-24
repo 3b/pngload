@@ -12,9 +12,8 @@ jobs:
     strategy:
       matrix:
         # sbcl32 and clisp32 don't work, clasp won't build on CI servers
-        #lisp: [sbcl-bin,sbcl,ccl,ccl32,ecl,clisp,allegro,cmucl,abcl]
+        lisp: [sbcl-bin,sbcl,ccl,ccl32,ecl,clisp,allegro,cmucl,abcl]
         os: [ubuntu-latest, macos-latest, windows-latest]
-        lisp: [sbcl-bin, abcl, ecl]
         exclude:
           # msys or something doesn't work on windows runners?
             - os: windows-latest
