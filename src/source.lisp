@@ -26,7 +26,7 @@
 
 (defun vector-source-from-stream (stream count)
   (let ((buf (make-array count :element-type 'ub8)))
-    (read-sequence buf stream)
+    (unless (zerop count) (read-sequence buf stream))
     (make-instance 'octet-vector-source :data buf :end count)))
 
 (defmethod .source-region (source size &key &allow-other-keys)
