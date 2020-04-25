@@ -123,10 +123,10 @@ jobs:
         ros -e '(ql:quickload :pngload.test)'
         ros -e '(ql:quickload :pngload.test)'
 
-    - name: load code from clean fasl cache
+    - name: load code from clean fasl cache and run tests
       shell: bash
       run: |
-        ros ${{ env.ql-pngload-test }}
+        ros ${{ env.ql-pngload-test }} -e '(pngload.test:run-tests-for-ci)'
 
     - name: load code from fasls and run tests
       shell: bash
