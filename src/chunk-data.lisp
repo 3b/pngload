@@ -252,4 +252,5 @@
   (push (list keyword compressed-text-datastream) (text *png*)))
 
 (define-chunk-data (unknown) ()
+  (skip-bytes (chunk-length unknown))
   (warn 'unknown-chunk-detected))
