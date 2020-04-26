@@ -2,9 +2,8 @@
   :description "Tests for pngload."
   :author ("Michael Fiano <mail@michaelfiano.com>"
            "Bart Botta <00003b@gmail.com>")
-  :maintainer "Michael Fiano <mail@michaelfiano.com>"
   :license "MIT"
-  :homepage "https://www.michaelfiano.com/projects/pngload"
+  :homepage "https://github.com/HackerTheory/pngload"
   :bug-tracker "https://github.com/HackerTheory/pngload/issues"
   :source-control (:git "https://github.com/HackerTheory/pngload.git")
   :encoding :utf-8
