@@ -4,7 +4,8 @@
   (:use #:cl
         #:pngload)
   (:export #:test-images
-           #:test-read-times))
+           #:test-read-times
+           #:run-tests-for-ci))
 
 (in-package #:pngload.test)
 
@@ -73,7 +74,7 @@
                    (when *break-on-failure*
                      (break "~s failed~@[: ~s~] ~s" (get-image-name file)
                             error
-                            (and image (pngload:color-type image))
+                            (and image (color-type image))
                             image ref))
                    (push (get-image-name file) *failed*))))))
       (map nil #'test-image files)
@@ -90,10 +91,11 @@
          (r (list (test-images*)
                   (test-images* :flip t)
                   (test-images* :flatten t)
-                  (test-images* :flip t :flatten t))))
-    (format t "~%Total: Passed: ~s / Failed: ~s~%"
-            (reduce '+ (mapcar #'first r))
-            (reduce '+ (mapcar #'second r)))))
+                  (test-images* :flip t :flatten t)))
+         (pass (reduce '+ (mapcar #'first r)))
+         (fail (reduce '+ (mapcar #'second r))))
+    (format t "~%Total: Passed: ~s / Failed: ~s~%" pass fail)
+    (values pass fail)))
 
 (defun test-read-time (library-name func file count)
   (let ((start (local-time:now)))
@@ -101,9 +103,22 @@
       (funcall func file))
     (format t "~A: ~,3fs~%"
             library-name
-            (local-time:timestamp-difference (local-time:now) start))))
+            (float (local-time:timestamp-difference (local-time:now) start)))))
 
 (defun test-read-times (file &key (count 1))
   (test-read-time "pngload" #'load-file file count)
   (test-read-time "png-read" #'png-read:read-png-file file count)
   (test-read-time "opticl" #'opticl:read-image-file file count))
+
+(defun run-tests-for-ci ()
+  (handler-case
+      (progn
+        ;; add any testing that should run in CI here
+        (multiple-value-bind (pass fail) (test-images)
+          ;; if tests fail, exit with non-zero code
+          (unless (zerop fail)
+            (format t "~s/~s tests failed~%" fail (+ pass fail))
+            (uiop:quit 124))))
+    (error (a)
+      (format t "caught error ~s~%~a~%" a a)
+      (uiop:quit 125))))

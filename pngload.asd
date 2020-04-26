@@ -9,13 +9,24 @@
   :bug-tracker "https://github.com/HackerTheory/pngload/issues"
   :encoding :utf-8
   :depends-on (#:alexandria
-               #:parsley
-               #:static-vectors)
+               #:3bz
+               (:feature (:and (:not :mezzano)
+                               (:not :abcl))
+                         cffi)
+               (:feature (:and (:not :mezzano)
+                               (:not :abcl))
+                         mmap)
+               (:feature (:and (:not :clisp) (:not :abcl))
+                         #:static-vectors)
+               #:swap-bytes)
   :pathname "src"
   :serial t
   :components
   ((:file "package")
    (:file "common")
+   (:file "source")
+   (:file "source-noffi" :if-feature (:or :mezzano :abcl))
+   (:file "source-ffi" :if-feature (:and (:not :mezzano) (:not :abcl)))
    (:file "properties")
    (:file "conditions")
    (:file "chunk")
@@ -23,4 +34,6 @@
    (:file "datastream")
    (:file "deinterlace")
    (:file "decode")
+   (:file "png-nommap" :if-feature (:or :mezzano :abcl))
+   (:file "png-mmap" :if-feature (:and (:not :mezzano) (:not :abcl)))
    (:file "png")))
