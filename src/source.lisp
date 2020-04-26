@@ -1,10 +1,10 @@
 (in-package :pngload)
 
 (defclass source ()
-  ((start :reader start :initform 0 :initarg :start)
-   (end :accessor end :initarg :end :initform nil)
-   (pos :accessor pos :initform 0 :initarg :pos)
-   (data :reader source-data :initarg :data)))
+  ((%start :reader start :initform 0 :initarg :start)
+   (%end :accessor end :initarg :end :initform nil)
+   (%pos :accessor pos :initform 0 :initarg :pos)
+   (%data :reader source-data :initarg :data)))
 
 (defclass octet-vector-source (source)
   ())
