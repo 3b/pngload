@@ -71,32 +71,6 @@
         (push data (data *png*)))
       (skip-bytes (chunk-length idat))))
 
-(defun source->3bz-context (s)
-  (etypecase s ;; shouldn't get stream-source here
-    (octet-vector-source
-     (3bz:make-octet-vector-context (source-data s)
-                                    :start (pos s)
-                                    :end (end s)
-                                    :offset (pos s)))
-    (octet-pointer-source
-     (3bz:make-octet-pointer-context *mmap-pointer*
-                                     :start (pos s)
-                                     :end (end s)
-                                     :offset (pos s)))
-    (file-stream-source
-     #++ ;; 3bz stream input is slow, so copy for now
-     (3bz:make-octet-stream-context (data s)
-                                    :start (pos s)
-                                    :end (end s)
-                                    :offset (pos s))
-     (let ((buf (make-array (- (end s) (pos s))
-                            :element-type 'ub8))
-           (p (file-position (source-data s))))
-       (file-position (source-data s) (pos s))
-       (read-sequence buf (source-data s))
-       (file-position (source-data s) p)
-       (3bz:make-octet-vector-context buf)))))
-
 (define-chunk-data (iend) ()
   (when *decode-data*
     (loop :with out = (make-array (get-image-bytes) :element-type 'ub8)
