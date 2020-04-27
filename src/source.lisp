@@ -105,10 +105,10 @@
                 (read-string (&key (bytes (- ,e ,p)) encoding
                                 null-terminated-p zlib)
                   (let ((s (make-array bytes :element-type 'ub8)))
-                    (loop for i below bytes
-                          for b = (ub8)
-                          do (setf (aref s i) b)
-                          until (and null-terminated-p (zerop b)))
+                    (loop :for i :below bytes
+                          :for b = (ub8)
+                          :do (setf (aref s i) b)
+                          :until (and null-terminated-p (zerop b)))
                     (when null-terminated-p
                       (setf s (subseq s 0 (position 0 s))))
                     (when zlib
@@ -167,8 +167,7 @@
                                     :start (pos s)
                                     :end (end s)
                                     :offset (pos s))
-     (let ((buf (make-array (- (end s) (pos s))
-                            :element-type 'ub8))
+     (let ((buf (make-array (- (end s) (pos s)) :element-type 'ub8))
            (p (file-position (source-data s))))
        (file-position (source-data s) (pos s))
        (read-sequence buf (source-data s))
@@ -179,8 +178,7 @@
   (if buffer
       `(let ((,source (vector-source-from-stream (source-data ,source)
                                                  ,buffer)))
-         (with-octet-vector-source (,source)
-           ,@body))
+         (with-octet-vector-source (,source) ,@body))
       (alexandria:with-gensyms (v p e e1)
         `(let ((,v (source-data ,source))
                (,p (pos ,source))
@@ -190,18 +188,15 @@
                     (type fixnum ,p))
            (labels ((ub8 ()
                       (assert (< ,p ,e))
-                      (prog1
-                          (read-byte ,v)
+                      (prog1 (read-byte ,v)
                         (incf ,p)))
                     (ub16be ()
                       (assert (<= (+ ,p 2) ,e))
-                      (prog1
-                          (nibbles:read-ub16/be ,v)
+                      (prog1 (nibbles:read-ub16/be ,v)
                         (incf ,p 2)))
                     (ub32be ()
                       (assert (<= (+ ,p 4) ,e))
-                      (prog1
-                          (nibbles:read-ub32/be ,v)
+                      (prog1 (nibbles:read-ub32/be ,v)
                         (incf ,p 4)))
                     (chunk-offset ()
                       (- ,e ,p))
@@ -217,16 +212,15 @@
                         a))
                     (source-region (n)
                       (setf (pos ,source) ,p)
-                      (prog1
-                          (.source-region ,source n)
+                      (prog1 (.source-region ,source n)
                         (setf ,p (+ ,p n))))
                     (read-string (&key (bytes (- ,e ,p)) encoding
                                     null-terminated-p zlib)
                       (let ((s (make-array bytes :element-type 'ub8)))
-                        (loop for i below bytes
-                              for b = (ub8)
-                              do (setf (aref s i) b)
-                              until (and null-terminated-p (zerop b)))
+                        (loop :for i :below bytes
+                              :for b = (ub8)
+                              :do (setf (aref s i) b)
+                              :until (and null-terminated-p (zerop b)))
                         (when null-terminated-p
                           (setf s (subseq s 0 (position 0 s))))
                         (when zlib
@@ -282,7 +276,7 @@
                     (chunk-offset ()
                       (- ,e ,p))
                     (skip-bytes (count)
-                      (loop repeat count do (ub8)))
+                      (loop :repeat count :do (ub8)))
                     (read-bytes (count &key zlib)
                       (let ((a (make-array count :element-type 'ub8)))
                         (map-into a #'ub8)
@@ -298,10 +292,10 @@
                                     encoding null-terminated-p
                                     zlib)
                       (let ((s (make-array bytes :element-type 'yub8)))
-                        (loop for i below bytes
-                              for b = (ub8)
-                              do (setf (aref s i) b)
-                              until (and null-terminated-p (zerop b)))
+                        (loop :for i :below bytes
+                              :for b = (ub8)
+                              :do (setf (aref s i) b)
+                              :until (and null-terminated-p (zerop b)))
                         (when null-terminated-p
                           (setf s (subseq s 0 (position 0 s))))
                         (when zlib

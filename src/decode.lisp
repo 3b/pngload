@@ -2,6 +2,11 @@
 
 (defvar *decode-data* nil)
 (defvar *flatten* nil)
+(alexandria:define-constant +filter-type-none+ 0)
+(alexandria:define-constant +filter-type-sub+ 1)
+(alexandria:define-constant +filter-type-up+ 2)
+(alexandria:define-constant +filter-type-average+ 3)
+(alexandria:define-constant +filter-type-paeth+ 4)
 
 (defmacro %row-major-aref (array index)
   `(row-major-aref ,array (the fixnum ,index)))
@@ -30,13 +35,6 @@
       (incf channels))
     channels))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (alexandria:define-constant +filter-type-none+ 0)
-  (alexandria:define-constant +filter-type-sub+ 1)
-  (alexandria:define-constant +filter-type-up+ 2)
-  (alexandria:define-constant +filter-type-average+ 3)
-  (alexandria:define-constant +filter-type-paeth+ 4))
-
 (defun allocate-image-data ()
   (let* ((width (width *png*))
          (height (height *png*))
@@ -57,7 +55,6 @@
     (apply #'make-array args)
     ))
 
-;;;
 ;;; Following the PNG sW3 spec, the pixels considered when performing filter
 ;;; Are described in this diagram:
 ;;;   +-------+
@@ -73,10 +70,11 @@
            (type (and fixnum (integer 1)) row-bytes pixel-bytes)
            (ignore y)
            (optimize speed))
-  (loop
-    :for x :from (+ row-start pixel-bytes) :below (+ row-start (1- row-bytes))
-    :for a fixnum := (- x pixel-bytes)
-    :do (setf (aref data x) (ldb (byte 8 0) (+ (aref data x) (aref data a))))))
+  (loop :for x :from (+ row-start pixel-bytes)
+          :below (+ row-start (1- row-bytes))
+        :for a fixnum = (- x pixel-bytes)
+        :do (setf (aref data x)
+                  (ldb (byte 8 0) (+ (aref data x) (aref data a))))))
 
 (defun unfilter-row-up (y data row-start row-bytes pixel-bytes)
   (declare (type ub8a1d data)
@@ -87,24 +85,24 @@
   (when (>= y 1)
     (loop
       :for x :from row-start :below (+ row-start (1- row-bytes))
-      :for b := (- x row-bytes)
-      :do (setf (aref data x) (ldb (byte 8 0) (+ (aref data x) (aref data b)))))))
+      :for b = (- x row-bytes)
+      :do (setf (aref data x)
+                (ldb (byte 8 0) (+ (aref data x) (aref data b)))))))
 
 (defun unfilter-row-average (y data row-start row-bytes pixel-bytes)
   (declare (type ub8a1d data)
            (type (and fixnum (integer 0)) y row-start)
            (type (and fixnum (integer 1)) row-bytes  pixel-bytes)
            (optimize speed))
-  (loop
-    :for x fixnum :from row-start :below (+ row-start (1- row-bytes))
-    :for a fixnum := (- x pixel-bytes)
-    :for b fixnum := (- x row-bytes)
-    :do (setf (aref data x)
-              (ldb (byte 8 0)
-                   (+ (aref data x)
-                      (floor (+ (if (>= a row-start) (aref data a) 0)
-                                (if (>= y 1) (aref data b) 0))
-                             2))))))
+  (loop :for x fixnum :from row-start :below (+ row-start (1- row-bytes))
+        :for a fixnum = (- x pixel-bytes)
+        :for b fixnum = (- x row-bytes)
+        :do (setf (aref data x)
+                  (ldb (byte 8 0)
+                       (+ (aref data x)
+                          (floor (+ (if (>= a row-start) (aref data a) 0)
+                                    (if (>= y 1) (aref data b) 0))
+                                 2))))))
 
 (defun unfilter-row-paeth (y data row-start row-bytes pixel-bytes)
   (declare (type ub8a1d data)
@@ -114,31 +112,34 @@
   (if (zerop y)
       ;; paeth on the first row is equivalent to a sub
       (unfilter-row-sub y data row-start row-bytes pixel-bytes)
-      (loop
-        :initially
-           ;; Handle the first column specifically so we don't have to worry about it later
-           (loop
-             :for x :from row-start :below (+ row-start pixel-bytes)
-             :do (setf (aref data x) (ldb (byte 8 0) (+ (aref data x) (aref data (- x row-bytes))))))
-        :for x fixnum :from (+ row-start pixel-bytes) :below (+ row-start (1- row-bytes))
-        :for a fixnum := (- x pixel-bytes)
-        :for b fixnum := (- x row-bytes)
-        :for c fixnum := (- b pixel-bytes)
-        :do (setf (aref data x)
-                  (ldb (byte 8 0)
-                       (+ (aref data x)
-                          ;; We know we're not on the first row or column so we can just branch off the values
-                          ;; and not their positions
-                          (let* ((av (aref data a))
-                                 (bv (aref data b))
-                                 (cv (aref data c))
-                                 (p (- (+ av bv) cv))
-                                 (pa (abs (- p av)))
-                                 (pb (abs (- p bv)))
-                                 (pc (abs (- p cv))))
-                            (cond ((and (<= pa pb) (<= pa pc)) av)
-                                  ((<= pb pc) bv)
-                                  (t cv)))))))))
+      (loop :initially
+        ;; Handle the first column specifically so we don't have to worry about
+        ;; it later
+        (loop :for x :from row-start :below (+ row-start pixel-bytes)
+              :do (setf (aref data x)
+                        (ldb (byte 8 0)
+                             (+ (aref data x) (aref data (- x row-bytes))))))
+            :for x fixnum :from (+ row-start pixel-bytes)
+              :below (+ row-start (1- row-bytes))
+            :for a fixnum = (- x pixel-bytes)
+            :for b fixnum = (- x row-bytes)
+            :for c fixnum = (- b pixel-bytes)
+            :do (setf (aref data x)
+                      (ldb (byte 8 0)
+                           (+ (aref data x)
+                              ;; We know we're not on the first row or column so
+                              ;; we can just branch off the values and not their
+                              ;; positions
+                              (let* ((av (aref data a))
+                                     (bv (aref data b))
+                                     (cv (aref data c))
+                                     (p (- (+ av bv) cv))
+                                     (pa (abs (- p av)))
+                                     (pb (abs (- p bv)))
+                                     (pc (abs (- p cv))))
+                                (cond ((and (<= pa pb) (<= pa pc)) av)
+                                      ((<= pb pc) bv)
+                                      (t cv)))))))))
 
 (defun unfilter (data width height start)
   (declare (ub32 width height)
@@ -168,7 +169,11 @@
              :for y :below height
              :for dst-data :from start :by scanline-bytes
              :for row-start fixnum :from (1+ start) :by row-bytes
-             :do (replace data data :start1 dst-data :start2 row-start :end2 (+ row-start scanline-bytes)))))
+             :do (replace data
+                          data
+                          :start1 dst-data
+                          :start2 row-start
+                          :end2 (+ row-start scanline-bytes)))))
 
 (defmacro maybe-flatten (dims bit-depth)
   (let ((nd-fn-sym (intern (format nil "COPY/~dD/~d" dims bit-depth)))
@@ -208,8 +213,8 @@
                 (type (unsigned-byte 34) stride))
        (loop :for dy :below height
              :for sy :downfrom (1- height)
-             :for d1 := (* dy stride)
-             :for s1 := (* sy stride)
+             :for d1 = (* dy stride)
+             :for s1 = (* sy stride)
              :do (assert (<= 0 (+ d1 stride) dsize))
                  (assert (<= 0 (+ s1 stride) ssize))
                  (locally (declare (optimize speed))
@@ -239,8 +244,8 @@
                 (type (unsigned-byte 34) stride))
        (loop :for dy :below height
              :for sy :downfrom (1- height)
-             :for d1 := (* dy stride)
-             :for s1 := (* sy stride 2)
+             :for d1 = (* dy stride)
+             :for s1 = (* sy stride 2)
              :do (assert (<= 0 (+ d1 stride) dsize))
                  (assert (<= 0 (+ s1 stride stride) ssize))
                  (locally (declare (optimize speed))
@@ -343,11 +348,9 @@
                    :for v = (%row-major-aref data (+ s i))
                    :do (setf (%row-major-aref data (+ d i)) v)
                    :count (= v k) :into matches
-                   ;:collect (list v k matches) :into foo
+                   ;; collect (list v k matches) :into foo
                    :finally (setf (%row-major-aref data (+ d (1- c)))
-                                  (if (= matches (1- c))
-                                      0
-                                      ,opaque)))))
+                                  (if (= matches (1- c)) 0 ,opaque)))))
 
 (defun flip (image)
   (let ((w (width *png*))
