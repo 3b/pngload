@@ -22,5 +22,5 @@
 (defun parse-all-chunks ()
   (loop :for chunk = (parse-chunk)
         :collect chunk
-        :when (eq (chunk-type chunk) #x49454e44)
+        :when (= (chunk-type chunk) #x49454e44)
           :do (loop-finish)))
