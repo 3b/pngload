@@ -11,7 +11,8 @@
                      (path c)))))
 
 (define-condition unknown-chunk-detected (png-warning)
-  ((%chunk :reader chunk :initarg :chunk))
+  ((%chunk :reader chunk :initarg :chunk)
+   (path :initform (get-path) :reader path))
   (:report (lambda (c s)
              (let* ((type-bytes (loop :with type = (chunk-type (chunk c))
                                       :for i :below 32 :by 8
