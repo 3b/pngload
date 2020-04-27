@@ -83,6 +83,7 @@ See LOAD-FILE"
                   (setf (%data y x c) (aref map g))))))))))
   png)
 
+#+sbcl
 (defmacro with-profiling (&body body)
   (let ((packages (remove-if-not
                    (lambda (x)
