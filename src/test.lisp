@@ -12,6 +12,7 @@
 (defvar *failed* nil)
 (defparameter *ref* :png-read)
 (defparameter *break-on-failure* nil)
+(defparameter *verbose* nil)
 
 (defun get-path ()
   (uiop:ensure-directory-pathname
@@ -59,14 +60,17 @@
 
 (defun test-images* (&key flip flatten)
   (let ((*failed*)
+        (*print-array* nil)
         (files (uiop:directory-files (get-path))))
     (flet ((test-image (file)
+             (when *verbose*
+               (format t "~% testing ~s flip ~s, flatten ~s~%"
+                       file flip flatten))
              (multiple-value-bind (image error)
                  (ignore-errors (load-file file :flip-y flip :flatten flatten))
                (if error
                    (progn
-                     (let ((*print-array* nil))
-                       (warn "~&error loading ~s:~%  ~a~%" file error))
+                     (warn "error loading ~s:~%  ~a~%" file error)
                      (when *break-on-failure*
                        (break "~s failed~@[: ~s~]" (get-image-name file)
                               error))
@@ -90,6 +94,10 @@
                                                    :element-type (array-element-type ref)
                                                    :displaced-to ref)))
                            (unless (and image (equalp (data image) ref))
+                             (when *verbose*
+                               (format t "~s failed ~s~%"
+                                       (get-image-name file)
+                                       (and image (color-type image))))
                              (when *break-on-failure*
                                (break "~s failed~@[: ~s~] ~s" (get-image-name file)
                                       error
