@@ -224,6 +224,30 @@
         compressed-text-datastream (read-string :encoding :latin-1 :zlib t))
   (push (list keyword compressed-text-datastream) (text *png*)))
 
+;;; Extension chunks
+;;; http://ftp-osl.osuosl.org/pub/libpng/documents/pngextensions.html#Chunks
+
+(define-chunk-data (offs) ()
+  (warn 'chunk-not-implemented :chunk offs))
+
+(define-chunk-data (pcal) ()
+  (warn 'chunk-not-implemented :chunk pcal))
+
+(define-chunk-data (scal) ()
+  (warn 'chunk-not-implemented :chunk scal))
+
+(define-chunk-data (gifg) ()
+  (warn 'chunk-not-implemented :chunk gifg))
+
+(define-chunk-data (gifx) ()
+  (warn 'chunk-not-implemented :chunk gifx))
+
+(define-chunk-data (ster) ()
+  (warn 'chunk-not-implemented :chunk ster))
+
+(define-chunk-data (exif) ()
+  (warn 'chunk-not-implemented :chunk exif))
+
 (define-chunk-data (unknown) ()
   (skip-bytes (chunk-length unknown))
   (warn 'unknown-chunk-detected :chunk unknown))

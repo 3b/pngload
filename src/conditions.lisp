@@ -1,28 +1,32 @@
 (in-package #:pngload)
 
-(define-condition png-warning (warning) ())
+
+(define-condition png-warning (warning)
+  ((%chunk :reader chunk
+           :initarg :chunk)
+   (%path :reader path
+          :initarg :path)))
 
 (define-condition png-error (error) ())
 
-(define-condition invalid-png-stream (png-error)
-  ((path :initform (get-path) :reader path))
+(define-condition invalid-png-stream (png-error) ()
   (:report (lambda (c s)
              (format s "Stream does not contain a valid PNG datastream: ~a."
                      (path c)))))
 
-(define-condition unknown-chunk-detected (png-warning)
-  ((%chunk :reader chunk :initarg :chunk)
-   (path :initform (get-path) :reader path))
+(define-condition unknown-chunk-detected (png-warning) ()
   (:report (lambda (c s)
-             (let* ((type-bytes (loop :with type = (chunk-type (chunk c))
-                                      :for i :below 32 :by 8
-                                      :collect (ldb (byte 8 i) type)
-                                        :into result
-                                      :finally (return (nreverse result))))
-                    (type-str (map 'string 'code-char type-bytes)))
+             (multiple-value-bind (str bytes) (get-chunk-type (chunk c))
                (format s "Unknown chunk type ~s = ~s in PNG datastream: ~a."
-                       (if (every 'graphic-char-p type-str)
-                           type-str
-                           (coerce type-str 'list))
-                       type-bytes
+                       str
+                       bytes
+                       (path c))))))
+
+(define-condition chunk-not-implemented (png-warning) ()
+  (:report (lambda (c s)
+             (multiple-value-bind (str bytes) (get-chunk-type (chunk c))
+               (format s "Extension chunk type ~s = ~s in PNG datastream: ~a ~
+                          not implemented yet."
+                       str
+                       bytes
                        (path c))))))
