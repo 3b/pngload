@@ -4,15 +4,15 @@
 
 (define-condition png-error (error) ())
 
-(define-condition invalid-png-stream (png-error) ()
+(define-condition invalid-png-stream (png-error)
+  ((path :initform (get-path) :reader path))
   (:report (lambda (c s)
-             (declare (ignore c))
              (format s "Stream does not contain a valid PNG datastream: ~a."
-                     (get-path)))))
+                     (path c)))))
 
 (define-condition unknown-chunk-detected (png-warning)
-  ((%chunk :reader chunk
-           :initarg :chunk))
+  ((%chunk :reader chunk :initarg :chunk)
+   (path :initform (get-path) :reader path))
   (:report (lambda (c s)
              (let* ((type-bytes (loop :with type = (chunk-type (chunk c))
                                       :for i :below 32 :by 8
@@ -25,4 +25,4 @@
                            type-str
                            (coerce type-str 'list))
                        type-bytes
-                       (get-path))))))
+                       (path c))))))
