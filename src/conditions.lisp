@@ -11,7 +11,7 @@
                      (get-path)))))
 
 (define-condition unknown-chunk-detected (png-warning)
-  ((%chunk ::reader chunk
+  ((%chunk :reader chunk
            :initarg :chunk))
   (:report (lambda (c s)
              (let* ((type-bytes (loop :with type = (chunk-type (chunk c))
