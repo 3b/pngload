@@ -82,3 +82,18 @@ See LOAD-FILE"
                 (let ((g (%data y c x)))
                   (setf (%data y x c) (aref map g))))))))))
   png)
+
+(defmacro with-profiling (&body body)
+  (let ((packages (remove-if-not
+                   (lambda (x)
+                     (find x '("PNGLOAD" "3BZ" "MMAP" "STATIC-VECTORS")
+                           :test #'string=))
+                   (mapcar #'package-name (list-all-packages)))))
+    `(unwind-protect
+          (progn
+            (sb-profile:unprofile)
+            (sb-profile:profile ,@packages)
+            ,@body)
+       (sb-profile:report)
+       (sb-profile:unprofile)
+       (sb-profile:reset))))
