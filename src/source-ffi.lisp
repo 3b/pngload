@@ -10,18 +10,15 @@
                 (type fixnum ,p))
        (labels ((ub8 ()
                   (assert (< ,p ,e))
-                  (prog1
-                      (cffi:mem-ref ,v :uint8 ,p)
+                  (prog1 (cffi:mem-ref ,v :uint8 ,p)
                     (incf ,p)))
                 (ub16be ()
                   (assert (<= (+ ,p 2) ,e))
-                  (prog1
-                      (be16 (cffi:mem-ref ,v :uint16 ,p))
+                  (prog1 (be16 (cffi:mem-ref ,v :uint16 ,p))
                     (incf ,p 2)))
                 (ub32be ()
                   (assert (<= (+ ,p 4) ,e))
-                  (prog1
-                      (be32 (cffi:mem-ref ,v :uint32 ,p))
+                  (prog1 (be32 (cffi:mem-ref ,v :uint32 ,p))
                     (incf ,p 4)))
                 (chunk-offset ()
                   (- ,e ,p))
@@ -36,16 +33,15 @@
                     a))
                 (source-region (n)
                   (setf (pos ,source) ,p)
-                  (prog1
-                      (.source-region ,source n)
+                  (prog1 (.source-region ,source n)
                     (setf ,p (+ ,p n))))
                 (read-string (&key (bytes (- ,e ,p)) encoding
                                 null-terminated-p zlib)
                   (let ((s (make-array bytes :element-type 'ub8)))
-                    (loop for i below bytes
-                          for b = (ub8)
-                          do (setf (aref s i) b)
-                          until (and null-terminated-p (zerop b)))
+                    (loop :for i :below bytes
+                          :for b = (ub8)
+                          :do (setf (aref s i) b)
+                          :until (and null-terminated-p (zerop b)))
                     (when null-terminated-p
                       (setf s (subseq s 0 (position 0 s))))
                     (when zlib
