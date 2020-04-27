@@ -7,10 +7,11 @@
   :source-control (:git "https://github.com/HackerTheory/pngload.git")
   :bug-tracker "https://github.com/HackerTheory/pngload/issues"
   :encoding :utf-8
-  :depends-on (#:alexandria
-               #:3bz
+  :depends-on (#:3bz
+               #:alexandria
                (:feature (:and (:not :mezzano) (:not :abcl)) #:cffi)
                (:feature (:and (:not :mezzano) (:not :abcl)) #:mmap)
+               #:parse-float
                (:feature (:and (:not :clisp) (:not :abcl)) #:static-vectors)
                #:swap-bytes)
   :pathname "src"
