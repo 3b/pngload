@@ -62,21 +62,40 @@
         (files (uiop:directory-files (get-path))))
     (flet ((test-image (file)
              (multiple-value-bind (image error)
-                 (load-file file :flip-y flip :flatten flatten)
-               (let ((ref (load-ref-image file)))
-                 (when flip
-                   (setf ref (opticl:vertical-flip-image ref)))
-                 (when flatten
-                   (setf ref (make-array (array-total-size ref)
-                                         :element-type (array-element-type ref)
-                                         :displaced-to ref)))
-                 (unless (and image (equalp (data image) ref))
-                   (when *break-on-failure*
-                     (break "~s failed~@[: ~s~] ~s" (get-image-name file)
-                            error
-                            (and image (color-type image))
-                            image ref))
-                   (push (get-image-name file) *failed*))))))
+                 (ignore-errors (load-file file :flip-y flip :flatten flatten))
+               (if error
+                   (progn
+                     (let ((*print-array* nil))
+                       (warn "~&error loading ~s:~%  ~a~%" file error))
+                     (when *break-on-failure*
+                       (break "~s failed~@[: ~s~]" (get-image-name file)
+                              error))
+                     (push (get-image-name file) *failed*))
+                   (multiple-value-bind (ref ref-error)
+                       (ignore-errors (load-ref-image file))
+                     (if ref-error
+                         (progn
+                           (warn "error from reference image loader loading ~s~% ~a~%"
+                                 file ref-error)
+                           (when *break-on-failure*
+                             (break "ref loader failed to load ~s~@[: ~s~]"
+                                    (get-image-name file)
+                                    ref-error))
+                           (push (get-image-name file) *failed*))
+                         (progn
+                           (when flip
+                             (setf ref (opticl:vertical-flip-image ref)))
+                           (when flatten
+                             (setf ref (make-array (array-total-size ref)
+                                                   :element-type (array-element-type ref)
+                                                   :displaced-to ref)))
+                           (unless (and image (equalp (data image) ref))
+                             (when *break-on-failure*
+                               (break "~s failed~@[: ~s~] ~s" (get-image-name file)
+                                      error
+                                      (and image (color-type image))
+                                      image ref))
+                             (push (get-image-name file) *failed*)))))))))
       (map nil #'test-image files)
       (format t "~&~%Testing against ~s" *ref*)
       (when (or flip flatten)
