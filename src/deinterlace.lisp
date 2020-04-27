@@ -81,22 +81,23 @@
                                       (aref source (+ syb sx i)))))))
 
 (defun deinterlace-adam7 (data)
-  (with-slots (width height bit-depth) *png*
-    (loop :with pixel-bits = (* (get-channel-count) bit-depth)
-          :with dest = (make-array (* height (ceiling (* width pixel-bits) 8))
-                                   :element-type 'ub8
-                                   :initial-element #xff)
-          :for pass :below 7
-          :for start = 0 :then next
-          :for (sw sh) :in (calculate-sub-image-dimensions)
-          :for scanline-bytes = (get-scanline-bytes sw)
-          :for next = (+ start sh (* sh (ceiling (* sw pixel-bits) 8)))
-          :when (zerop sw)
-            :do (setf next start)
-          :when (and (plusp sw) (plusp sh))
-            :do (unfilter data sw sh start)
-                (if (< pixel-bits 8)
-                    (add-sub-image/sub-byte dest data pass sw sh pixel-bits
-                                            start)
-                    (add-sub-image dest data pass sw sh (/ pixel-bits 8) start))
-          :finally (return dest))))
+  (loop :with width = (width *png*)
+        :with height = (height *png*)
+        :with pixel-bits = (* (get-channel-count) (bit-depth *png*))
+        :with dest = (make-array (* height (ceiling (* width pixel-bits) 8))
+                                 :element-type 'ub8
+                                 :initial-element #xff)
+        :for pass :below 7
+        :for start = 0 :then next
+        :for (sw sh) :in (calculate-sub-image-dimensions)
+        :for scanline-bytes = (get-scanline-bytes sw)
+        :for next = (+ start sh (* sh (ceiling (* sw pixel-bits) 8)))
+        :when (zerop sw)
+          :do (setf next start)
+        :when (and (plusp sw) (plusp sh))
+          :do (unfilter data sw sh start)
+              (if (< pixel-bits 8)
+                  (add-sub-image/sub-byte dest data pass sw sh pixel-bits
+                                          start)
+                  (add-sub-image dest data pass sw sh (/ pixel-bits 8) start))
+        :finally (return dest)))

@@ -31,9 +31,8 @@
 (defun parse-chunk ()
   (let ((chunk (make-chunk)))
     (with-source ((state-source (state *png*)) :buffer nil)
-      (with-slots (length type data crc) chunk
-        (setf length (ub32be)
-              type (ub32be)
-              data (nest (parse-chunk-data chunk))
-              crc (ub32be))))
+      (setf (chunk-length chunk) (ub32be)
+            (chunk-type chunk) (ub32be)
+            (chunk-data chunk) (nest (parse-chunk-data chunk))
+            (chunk-crc chunk) (ub32be)))
     chunk))
