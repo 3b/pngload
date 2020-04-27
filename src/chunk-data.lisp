@@ -1,12 +1,11 @@
 (in-package #:pngload)
 
 (defmacro define-chunk-data ((type &key (buffer t)) slots &body body)
-  (alexandria:with-gensyms (chunk chunk-type chunk-data)
+  (alexandria:with-gensyms (chunk chunk-data)
     (let ((struct-name (alexandria:symbolicate 'chunk-data- type)))
       `(progn
          (defstruct ,struct-name ,@slots)
-         (defmethod parse-chunk-data
-             ((,chunk-type (eql ,(alexandria:make-keyword type))) ,chunk)
+         (defun ,(alexandria:symbolicate '#:parse-chunk/ type) (,chunk)
            (let ((,type ,chunk)
                  (,chunk-data (,(alexandria:symbolicate '#:make- struct-name))))
              (declare (ignorable ,type))
@@ -17,17 +16,23 @@
                                             struct-name '#:- x)
                                           ,chunk-data)))
                                 slots)
-               (with-source (*png-source* :end (+ (pos *png-source*)
-                                                  (chunk-length ,chunk))
-                                          :buffer ,(cond
-                                                     ((eql buffer t)
-                                                      `(chunk-length ,chunk))
-                                                     (t ;; number or nil
-                                                      buffer)))
+               (with-source (*png-source*
+                             :end (+ (pos *png-source*)
+                                     (chunk-length ,chunk))
+                             :buffer ,(cond
+                                        ((eql buffer t)
+                                         `(chunk-length ,chunk))
+                                        (t ;; number or nil
+                                         buffer)))
                  ,@body))
              ,chunk-data))))))
 
-(defgeneric parse-chunk-data (chunk-type chunk))
+(define-chunk-data (idat :buffer nil) (data)
+  (if *decode-data*
+      (progn
+        (setf data (source-region (chunk-length idat)))
+        (push data (data *png*)))
+      (skip-bytes (chunk-length idat))))
 
 (define-chunk-data (ihdr) (width height bit-depth colour-type compression-method
                                  filter-method interlace-method)
@@ -55,22 +60,6 @@
         (filter-method *png*) (ecase filter-method
                                 (0 :standard))))
 
-(define-chunk-data (plte) (palette-entries)
-  (let ((entry-count (/ (chunk-length plte) 3)))
-    (setf palette-entries (make-array `(,entry-count 3) :element-type 'ub8))
-    (dotimes (entry entry-count)
-      (dotimes (sample 3)
-        (setf (aref palette-entries entry sample) (ub8))))
-    (setf (palette-count *png*) entry-count
-          (palette *png*) palette-entries)))
-
-(define-chunk-data (idat :buffer nil) (data)
-  (if *decode-data*
-      (progn
-        (setf data (source-region (chunk-length idat)))
-        (push data (data *png*)))
-      (skip-bytes (chunk-length idat))))
-
 (define-chunk-data (iend) ()
   (when *decode-data*
     (loop :with out = (make-array (get-image-bytes) :element-type 'ub8)
@@ -81,6 +70,15 @@
               (3bz:decompress read-context dstate)
           :finally (assert (3bz:finished dstate))
                    (setf (data *png*) out))))
+
+(define-chunk-data (plte) (palette-entries)
+  (let ((entry-count (/ (chunk-length plte) 3)))
+    (setf palette-entries (make-array `(,entry-count 3) :element-type 'ub8))
+    (dotimes (entry entry-count)
+      (dotimes (sample 3)
+        (setf (aref palette-entries entry sample) (ub8))))
+    (setf (palette-count *png*) entry-count
+          (palette *png*) palette-entries)))
 
 (define-chunk-data (chrm) (white-point-x white-point-y red-x red-y green-x
                                          green-y blue-x blue-y)
@@ -227,4 +225,4 @@
 
 (define-chunk-data (unknown) ()
   (skip-bytes (chunk-length unknown))
-  (warn 'unknown-chunk-detected))
+  (warn 'unknown-chunk-detected :chunk unknown))
