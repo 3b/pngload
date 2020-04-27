@@ -14,13 +14,17 @@
 (deftype ub16a3d () '(simple-array ub16 (* * *)))
 
 (defvar *png*)
-(defvar *png-source*)
-(defvar *decode-data*)
-(defvar *flip-y*)
-(defvar *use-static-vector*)
-(defvar *mmap-pointer*)
+
+(defstruct state
+  decode-data
+  flatten
+  flip-y
+  use-static-vector
+  source
+  mmap-pointer)
 
 (defstruct (png (:conc-name nil))
+  state
   parse-tree
   width
   height
@@ -40,4 +44,4 @@
   data)
 
 (defun get-path ()
-  (source-path *png-source*))
+  (source-path (state-source (state *png*))))

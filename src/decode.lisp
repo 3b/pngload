@@ -1,7 +1,5 @@
 (in-package #:pngload)
 
-(defvar *decode-data* nil)
-(defvar *flatten* nil)
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (alexandria:define-constant +filter-type-none+ 0)
   (alexandria:define-constant +filter-type-sub+ 1)
@@ -40,21 +38,22 @@
   (let* ((width (width *png*))
          (height (height *png*))
          (channels (get-image-channels))
-         (args (list (if *flatten*
+         (args (list (if (state-flatten (state *png*))
                          (* width height channels)
                          `(,height ,width ,@(when (> channels 1)
                                               (list channels))))
                      :element-type (ecase (bit-depth *png*)
                                      ((1 2 4 8) 'ub8)
-                                     (16 'ub16)))))
-    (when *use-static-vector* (assert *flatten*))
-    #- (or clisp abcl)
-    (if *use-static-vector*
+                                     (16 'ub16))))
+         (use-static-vector (state-use-static-vector (state *png*))))
+    (when use-static-vector
+      (assert (state-flatten (state *png*))))
+    #-(or clisp abcl)
+    (if use-static-vector
         (apply #'static-vectors:make-static-vector args)
         (apply #'make-array args))
     #+ (or clisp abcl)
-    (apply #'make-array args)
-    ))
+    (apply #'make-array args)))
 
 ;;; Following the PNG sW3 spec, the pixels considered when performing filter
 ;;; Are described in this diagram:
@@ -183,17 +182,19 @@
         (copy-flip-fn-sym (intern (format nil "COPY/~d/FLIP" bit-depth)))
         (nd-type-sym (intern (format nil "UB~dA~dD" bit-depth dims)))
         (1d-type-sym (intern (format nil "UB~dA1D" bit-depth))))
+    ;; TODO: Figure out why there are two identical functions here. ~axion
+    ;; 4/27/2020
     `(flet ((,nd-fn-sym ()
               (declare (,nd-type-sym data))
-              (if *flip-y*
+              (if (state-flip-y (state *png*))
                   (,copy-flip-fn-sym)
                   (,copy-fn-sym)))
             (,1d-fn-sym ()
               (declare (,1d-type-sym data))
-              (if *flip-y*
+              (if (state-flip-y (state *png*))
                   (,copy-flip-fn-sym)
                   (,copy-fn-sym))))
-       (if *flatten*
+       (if (state-flatten (state *png*))
            (,1d-fn-sym)
            (,nd-fn-sym)))))
 
@@ -276,7 +277,7 @@
                                      (if (array-in-bounds-p transparency s)
                                          (aref transparency s)
                                          255))))))
-      (if *flatten*
+      (if (state-flatten (state *png*))
           (locally (declare (ub8a1d data)) (copy))
           (locally (declare (ub8a3d data)) (copy))))))
 
@@ -382,7 +383,7 @@
           (t (f :opt nil)))))))
 
 (defun maybe-flip (data)
-  (when *flip-y*
+  (when (state-flip-y (state *png*))
     (flip data)))
 
 (defun decode ()

@@ -157,7 +157,7 @@
                                     :end (end s)
                                     :offset (pos s)))
     (octet-pointer-source
-     (3bz:make-octet-pointer-context *mmap-pointer*
+     (3bz:make-octet-pointer-context (state-mmap-pointer (state *png*))
                                      :start (pos s)
                                      :end (end s)
                                      :offset (pos s)))

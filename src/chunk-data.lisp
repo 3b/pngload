@@ -1,13 +1,14 @@
 (in-package #:pngload)
 
 (defmacro define-chunk-data ((type &key (buffer t)) slots &body body)
-  (alexandria:with-gensyms (chunk chunk-data)
+  (alexandria:with-gensyms (source chunk chunk-data)
     (let ((struct-name (alexandria:symbolicate 'chunk-data- type)))
       `(progn
          (defstruct ,struct-name ,@slots)
          (defun ,(alexandria:symbolicate '#:parse-chunk/ type) (,chunk)
            (let ((,type ,chunk)
-                 (,chunk-data (,(alexandria:symbolicate '#:make- struct-name))))
+                 (,chunk-data (,(alexandria:symbolicate '#:make- struct-name)))
+                 (,source (state-source (state *png*))))
              (declare (ignorable ,type))
              (symbol-macrolet ,(mapcar
                                 (lambda (x)
@@ -16,8 +17,8 @@
                                             struct-name '#:- x)
                                           ,chunk-data)))
                                 slots)
-               (with-source (*png-source*
-                             :end (+ (pos *png-source*)
+               (with-source (,source
+                             :end (+ (pos ,source)
                                      (chunk-length ,chunk))
                              :buffer ,(cond
                                         ((eql buffer t)
@@ -28,7 +29,7 @@
              ,chunk-data))))))
 
 (define-chunk-data (idat :buffer nil) (data)
-  (if *decode-data*
+  (if (state-decode-data (state *png*))
       (progn
         (setf data (source-region (chunk-length idat)))
         (push data (data *png*)))
@@ -61,7 +62,7 @@
                                 (0 :standard))))
 
 (define-chunk-data (iend) ()
-  (when *decode-data*
+  (when (state-decode-data (state *png*))
     (loop :with out = (make-array (get-image-bytes) :element-type 'ub8)
           :with dstate = (3bz:make-zlib-state :output-buffer out)
           :for part :in (nreverse (data *png*))

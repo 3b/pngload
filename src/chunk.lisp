@@ -30,7 +30,7 @@
 
 (defun parse-chunk ()
   (let ((chunk (make-chunk)))
-    (with-source (*png-source* :buffer nil)
+    (with-source ((state-source (state *png*)) :buffer nil)
       (with-slots (length type data crc) chunk
         (setf length (ub32be)
               type (ub32be)

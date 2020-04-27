@@ -14,14 +14,15 @@ STATIC-VECTOR: When non-NIL, read the image data into a static-vectors array,
 suitable to be passed to a foreign library.
 
 See LOAD-FILE if you want to load a PNG datastream from a file on disk."
-  (let ((*png-source* (make-instance 'stream-source :data stream)))
-    (let ((*png* (make-png))
-          (*decode-data* decode)
-          (*flatten* flatten)
-          (*flip-y* flip-y)
-          (*use-static-vector* static-vector))
-      (setf (parse-tree *png*) (parse-datastream))
-      *png*)))
+  (let* ((source (make-instance 'stream-source :data stream))
+         (state (make-state :decode-data decode
+                            :flatten flatten
+                            :flip-y flip-y
+                            :use-static-vector static-vector
+                            :source source))
+         (*png* (make-png :state state)))
+    (setf (parse-tree *png*) (parse-datastream))
+    *png*))
 
 
 #- (or clisp abcl)

@@ -8,12 +8,12 @@
   (let ((datastream (make-datastream)))
     (setf (datastream-signature datastream) (parse-signature)
           (datastream-chunks datastream) (parse-all-chunks))
-    (when *decode-data*
+    (when (state-decode-data (state *png*))
       (decode))
     datastream))
 
 (defun parse-signature ()
-  (with-source (*png-source*)
+  (with-source ((state-source (state *png*)))
     (let ((signature (loop :repeat 8 :collect (ub8))))
       (if (equalp signature '(137 80 78 71 13 10 26 10))
           signature
