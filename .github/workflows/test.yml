@@ -57,6 +57,11 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+    # tell git not to convert line endings
+    - name: turn off git autocrlf
+      if: matrix.os == 'windows-latest'
+      run: git config --global core.autocrlf false
+
     # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
