@@ -1,5 +1,11 @@
 (in-package :pngload)
 
+(declaim (inline ub32->sb32))
+(defun ub32->sb32 (s)
+  (if (logbitp 31 s)
+      (dpb s (byte 32 0) -1)
+      s))
+
 (defmacro with-octet-pointer-source ((source &key end) &body body)
   (alexandria:with-gensyms (v p e e1)
     `(let ((,v (source-data ,source))
@@ -19,6 +25,10 @@
                 (ub32be ()
                   (assert (<= (+ ,p 4) ,e))
                   (prog1 (be32 (cffi:mem-ref ,v :uint32 ,p))
+                    (incf ,p 4)))
+                (sb32be ()
+                  (assert (<= (+ ,p 4) ,e))
+                  (prog1 (ub32->sb32 (be32 (cffi:mem-ref ,v :uint32 ,p)))
                     (incf ,p 4)))
                 (chunk-offset ()
                   (- ,e ,p))
@@ -47,8 +57,8 @@
                     (when zlib
                       (setf s (3bz:decompress-vector s :format :zlib)))
                     (babel:octets-to-string s :encoding encoding))))
-         (declare (inline ub8 ub16be ub32be)
-                  (ignorable #'ub8 #'ub16be #'ub32be
+         (declare (inline ub8 ub16be ub32be sb32be)
+                  (ignorable #'ub8 #'ub16be #'ub32be #'sb32be
                              #'chunk-offset #'read-string
                              #'skip-bytes #'read-bytes
                              #'source-region))
