@@ -86,6 +86,11 @@
                   (prog1
                       (nibbles:ub32ref/be ,v ,p)
                     (incf ,p 4)))
+                (sb32be ()
+                  (assert (<= (+ ,p 4) ,e))
+                  (prog1
+                      (nibbles:sb32ref/be ,v ,p)
+                    (incf ,p 4)))
                 (chunk-offset ()
                   (- ,e ,p))
                 (skip-bytes (count)
@@ -114,8 +119,8 @@
                     (when zlib
                       (setf s (3bz:decompress-vector s :format :zlib)))
                     (babel:octets-to-string s :encoding encoding))))
-         (declare (inline ub8 ub16be ub32be)
-                  (ignorable #'ub8 #'ub16be #'ub32be
+         (declare (inline ub8 ub16be ub32be sb32be)
+                  (ignorable #'ub8 #'ub16be #'ub32be #'sb32be
                              #'chunk-offset #'read-string
                              #'skip-bytes #'read-bytes
                              #'source-region))
@@ -198,6 +203,10 @@
                       (assert (<= (+ ,p 4) ,e))
                       (prog1 (nibbles:read-ub32/be ,v)
                         (incf ,p 4)))
+                    (sb32be ()
+                      (assert (<= (+ ,p 4) ,e))
+                      (prog1 (nibbles:read-sb32/be ,v)
+                        (incf ,p 4)))
                     (chunk-offset ()
                       (- ,e ,p))
                     (skip-bytes (count)
@@ -226,8 +235,8 @@
                         (when zlib
                           (setf s (3bz:decompress-vector s :format :zlib)))
                         (babel:octets-to-string s :encoding encoding))))
-             (declare (inline ub8 ub16be ub32be)
-                      (ignorable #'ub8 #'ub16be #'ub32be
+             (declare (inline ub8 ub16be ub32be sb32be)
+                      (ignorable #'ub8 #'ub16be #'ub32be #'sb32be
                                  #'chunk-offset #'read-string
                                  #'skip-bytes #'read-bytes
                                  #'source-region))
@@ -273,6 +282,11 @@
                       (prog1
                           (nibbles:read-ub32/be ,v)
                         (incf ,p 4)))
+                    (sb32be ()
+                      (when ,e (assert (<= (+ ,p 4) ,e)))
+                      (prog1
+                          (nibbles:read-sb32/be ,v)
+                        (incf ,p 4)))
                     (chunk-offset ()
                       (- ,e ,p))
                     (skip-bytes (count)
@@ -301,8 +315,8 @@
                         (when zlib
                           (setf s (3bz:decompress-vector s :format :zlib)))
                         (babel:octets-to-string s :encoding encoding))))
-             (declare (inline ub8 ub16be ub32be)
-                      (ignorable #'ub8 #'ub16be #'ub32be
+             (declare (inline ub8 ub16be ub32be sb32be)
+                      (ignorable #'ub8 #'ub16be #'ub32be #'sb32be
                                  #'chunk-offset #'read-string
                                  #'skip-bytes #'read-bytes
                                  #'source-region))

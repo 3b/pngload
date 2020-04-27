@@ -12,6 +12,7 @@
 (deftype ub16a1d () '(simple-array ub16 (*)))
 (deftype ub16a2d () '(simple-array ub16 (* *)))
 (deftype ub16a3d () '(simple-array ub16 (* * *)))
+(deftype sb32 () '(signed-byte 32))
 
 (defvar *png*)
 
