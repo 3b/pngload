@@ -23,12 +23,14 @@
   mmap-pointer)
 
 (defstruct (png (:conc-name nil))
+  path
   state
   parse-tree
   width
   height
   bit-depth
   color-type
+  (metadata (make-hash-table :test #'eq))
   (palette-count 0)
   palette
   (gamma 1.0)
@@ -41,6 +43,10 @@
   last-modified
   text
   data)
+
+(defmethod print-object ((object png) stream)
+  (print-unreadable-object (object stream :type t)
+    (format stream "~s" (source-path (state-source (state object))))))
 
 (defun get-path (png)
   (source-path (state-source (state png))))

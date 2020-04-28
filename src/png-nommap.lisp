@@ -15,15 +15,9 @@ suitable to be passed to a foreign library.
 
 See LOAD-STREAM if you want to load a PNG datastream.
 "
-  (with-open-file (stream path :element-type '3bz::octet)
-    (let* ((source (make-instance 'file-stream-source
-                                  :data stream
-                                  :end (file-length stream)))
-           (state (make-state :decode-data decode
-                              :flatten flatten
-                              :flip-y flip-y
-                              :use-static-vector static-vector
-                              :source source))
-           (png (make-png :state state)))
-      (setf (parse-tree png) (parse-datastream png))
-      png)))
+  (with-png-file (png path)
+    (with-open-file (stream (path png) :element-type '3bz::octet)
+      (let ((source (make-instance 'file-stream-source
+                                   :data stream
+                                   :end (file-length stream))))
+        (setf (state-source (state png)) source)))))

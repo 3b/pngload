@@ -14,6 +14,7 @@
                #:parse-float
                (:feature (:and (:not :clisp) (:not :abcl)) #:static-vectors)
                #:swap-bytes
+               #:uiop
                #:zpb-exif)
   :pathname "src"
   :serial t
@@ -30,6 +31,7 @@
    (:file "datastream")
    (:file "deinterlace")
    (:file "decode")
+   (:file "metadata")
+   (:file "png")
    (:file "png-nommap" :if-feature (:or :mezzano :abcl))
-   (:file "png-mmap" :if-feature (:and (:not :mezzano) (:not :abcl)))
-   (:file "png")))
+   (:file "png-mmap" :if-feature (:and (:not :mezzano) (:not :abcl)))))

@@ -10,6 +10,10 @@
 
 (define-condition png-error (png-condition error) ())
 
+(define-condition file-not-found (png-error) ()
+  (:report (lambda (c s)
+             (format s "File not found: ~a," (get-path (png c))))))
+
 (define-condition invalid-png-stream (png-error) ()
   (:report (lambda (c s)
              (format s "Not a valid PNG datastream: ~a." (get-path (png c))))))

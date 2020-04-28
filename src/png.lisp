@@ -45,8 +45,7 @@ See LOAD-FILE"
                                     :flip-y ,flip-y
                                     :static-vector t
                                     :flatten t))))
-       (unwind-protect
-            (progn ,@body)
+       (unwind-protect (progn ,@body)
          (when (and ,png-var (data ,png-var))
            (static-vectors:free-static-vector (data ,png-var))
            (setf (data ,png-var) nil))))))
@@ -97,3 +96,17 @@ See LOAD-FILE"
        (sb-profile:report)
        (sb-profile:unprofile)
        (sb-profile:reset))))
+
+(defmacro with-png-file ((png path) &body body)
+  (alexandria:with-gensyms (state)
+    `(let ((,png (make-png :path (parse-namestring ,path)))
+           (,state (make-state :decode-data decode
+                               :flatten flatten
+                               :flip-y flip-y
+                               :use-static-vector static-vector)))
+       (unless (uiop:file-exists-p ,path)
+         (error 'file-not-found :png ,png))
+       (setf (state ,png) ,state)
+       ,@body
+       (setf (parse-tree ,png) (parse-datastream ,png))
+       ,png)))
