@@ -66,8 +66,8 @@
               (macrolet ((nest (&body b)
                            `(progn
                               (setf (pos ,',source) ,',p)
-                              (progn ,@b)
-                              (setf ,',p (pos ,',source)))))
+                              (prog1 (progn ,@b)
+                                (setf ,',p (pos ,',source))))))
                 ,@(when end
                     `((assert (<= ,end (end ,source)))
                       (setf (end ,source) ,end)))
