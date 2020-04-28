@@ -249,13 +249,13 @@
         y (sb32be)
         unit-specifier (ub8))
   ;; TODO: Add user getter functions (remove below line when done)
-  (warn 'chunk-not-implemented :chunk offs :path (get-path png)))
+  (warn 'chunk-not-implemented :png png :chunk offs))
 
 (define-chunk pcal (png)
   (name original-zero original-max equation-type parameter-count unit-name)
   ;; TODO: Parse this chunk (remove below 2 lines when done)
   (skip-bytes (chunk-length pcal))
-  (warn 'chunk-not-implemented :chunk pcal :path (get-path png)))
+  (warn 'chunk-not-implemented :png png :chunk pcal))
 
 (define-chunk scal (png)
   (unit-specifier pixel-width pixel-height)
@@ -265,7 +265,7 @@
         pixel-height (parse-float:parse-float
                       (read-string :encoding :ascii)))
   ;; TODO: Add user getter functions (remove below line when done)
-  (warn 'chunk-not-implemented :chunk scal :path (get-path png)))
+  (warn 'chunk-not-implemented :png png :chunk scal))
 
 (define-chunk gifg (png)
   (disposal-method user-input-flag delay-time)
@@ -273,7 +273,7 @@
         user-input-flag (ub8)
         delay-time (ub16be))
   ;; TODO: Add user getter functions (remove below line when done)
-  (warn 'chunk-not-implemented :chunk gifg :path (get-path png)))
+  (warn 'chunk-not-implemented :png png :chunk gifg))
 
 (define-chunk gifx (png)
   (application-identifier authentication-code application-data)
@@ -281,13 +281,13 @@
         authentication-code (read-bytes 3)
         application-data (read-bytes (chunk-offset)))
   ;; TODO: Add user getter functions (remove below line when done)
-  (warn 'chunk-not-implemented :chunk gifx :path (get-path png)))
+  (warn 'chunk-not-implemented :png png :chunk gifx))
 
 (define-chunk ster (png)
   (mode)
   (setf mode (ub8))
   ;; TODO: Add user getter function (remove below line when done)
-  (warn 'chunk-not-implemented :chunk ster :path (get-path png)))
+  (warn 'chunk-not-implemented :png png :chunk ster))
 
 (define-chunk exif (png)
   (data)
@@ -297,8 +297,8 @@
                   (zpb-exif:parse-exif-octets (read-bytes (chunk-offset)))
                   :parsedp t)))
   ;; TODO: Add user getter function (remove below line when done)
-  (warn 'chunk-not-implemented :chunk exif :path (get-path png)))
+  (warn 'chunk-not-implemented :png png :chunk exif))
 
 (define-chunk unknown (png) ()
   (skip-bytes (chunk-length unknown))
-  (warn 'unknown-chunk-detected :chunk unknown :path (get-path png)))
+  (warn 'unknown-chunk-detected :png png :chunk unknown))

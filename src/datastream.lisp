@@ -17,7 +17,7 @@
     (let ((signature (loop :repeat 8 :collect (ub8))))
       (if (equalp signature '(137 80 78 71 13 10 26 10))
           signature
-          (error 'invalid-png-stream :path (get-path png))))))
+          (error 'invalid-png-stream :png png)))))
 
 (defun parse-all-chunks (png)
   (loop :for chunk = (parse-chunk png)

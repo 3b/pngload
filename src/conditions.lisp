@@ -1,10 +1,10 @@
 (in-package #:pngload)
 
 (define-condition png-condition ()
-  ((%chunk :reader chunk
-           :initarg :chunk)
-   (%path :reader path
-          :initarg :path)))
+  ((%png :reader png
+         :initarg :png)
+   (%chunk :reader chunk
+           :initarg :chunk)))
 
 (define-condition png-warning (png-condition warning) ())
 
@@ -12,7 +12,7 @@
 
 (define-condition invalid-png-stream (png-error) ()
   (:report (lambda (c s)
-             (format s "Not a valid PNG datastream: ~a." (path c)))))
+             (format s "Not a valid PNG datastream: ~a." (get-path (png c))))))
 
 (define-condition unknown-chunk-detected (png-warning) ()
   (:report (lambda (c s)
@@ -20,7 +20,7 @@
                (format s "Unknown chunk type: ~s ~s in stream: ~a."
                        type
                        bytes
-                       (path c))))))
+                       (get-path (png c)))))))
 
 (define-condition chunk-not-implemented (png-warning) ()
   (:report (lambda (c s)
@@ -29,4 +29,4 @@
                           in stream: ~a."
                        type
                        bytes
-                       (path c))))))
+                       (get-path (png c)))))))
