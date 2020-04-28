@@ -68,6 +68,12 @@ jobs:
     # check out extra repos if not in QL, or version in ql is too old
     - run: mkdir -p ~/lisp/
 
+    - name: 3bz from git
+      uses: actions/checkout@v2
+      with:
+        repository: 3b/3bz
+        path: ~/lisp/3bz
+
     - name: zpb-exif from git
       uses: actions/checkout@v2
       with:
