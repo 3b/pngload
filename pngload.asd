@@ -25,7 +25,7 @@
    (:file "source-ffi" :if-feature (:and (:not :mezzano) (:not :abcl)))
    (:file "properties")
    (:file "chunk")
-   (:file "chunk-data")
+   (:file "chunk-types")
    (:file "conditions")
    (:file "datastream")
    (:file "deinterlace")

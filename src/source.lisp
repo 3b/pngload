@@ -154,7 +154,7 @@
   #+big-endian
   x)
 
-(defun source->3bz-context (s)
+(defun source->3bz-context (png s)
   (etypecase s ;; shouldn't get stream-source here
     (octet-vector-source
      (3bz:make-octet-vector-context (source-data s)
@@ -162,7 +162,7 @@
                                     :end (end s)
                                     :offset (pos s)))
     (octet-pointer-source
-     (3bz:make-octet-pointer-context (state-mmap-pointer (state *png*))
+     (3bz:make-octet-pointer-context (state-mmap-pointer (state png))
                                      :start (pos s)
                                      :end (end s)
                                      :offset (pos s)))

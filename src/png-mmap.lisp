@@ -26,6 +26,6 @@ See LOAD-STREAM if you want to load a PNG datastream.
                                 :use-static-vector static-vector
                                 :source source
                                 :mmap-pointer pointer-binding))
-             (*png* (make-png :state state)))
-        (setf (parse-tree *png*) (parse-datastream))
-        *png*))))
+             (png (make-png :state state)))
+        (setf (parse-tree png) (parse-datastream png))
+        png))))

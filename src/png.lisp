@@ -20,9 +20,9 @@ See LOAD-FILE if you want to load a PNG datastream from a file on disk."
                             :flip-y flip-y
                             :use-static-vector static-vector
                             :source source))
-         (*png* (make-png :state state)))
-    (setf (parse-tree *png*) (parse-datastream))
-    *png*))
+         (png (make-png :state state)))
+    (setf (parse-tree png) (parse-datastream png))
+    png))
 
 
 #- (or clisp abcl)
@@ -62,11 +62,10 @@ See LOAD-FILE"
 (defun expand-gray (png)
   (when (and (member (color-type png) '(:greyscale :greyscale-alpha))
              (< (bit-depth png) 8))
-    (let* ((*png* png)
-           (width (width png))
+    (let* ((width (width png))
            (height (height png))
            (bit-depth (bit-depth png))
-           (channels (get-image-channels))
+           (channels (get-image-channels png))
            (grey-channels (- channels (if (transparency png) 1 0)))
            (data (data png))
            (stride (* width channels)))

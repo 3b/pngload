@@ -14,8 +14,6 @@
 (deftype ub16a3d () '(simple-array ub16 (* * *)))
 (deftype sb32 () '(signed-byte 32))
 
-(defvar *png*)
-
 (defstruct state
   decode-data
   flatten
@@ -44,5 +42,5 @@
   text
   data)
 
-(defun get-path ()
-  (source-path (state-source (state *png*))))
+(defun get-path (png)
+  (source-path (state-source (state png))))

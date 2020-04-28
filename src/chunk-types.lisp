@@ -6,13 +6,12 @@
       (destructuring-bind (slots . body) body
         `(progn
            (defstruct ,struct-name ,@slots)
-           (defun ,(alexandria:symbolicate '#:parse-chunk/ type) (,chunk)
-             (let* ((,png *png*)
-                    (,type ,chunk)
+           (defun ,(alexandria:symbolicate '#:parse-chunk/ type) (,png ,chunk)
+             (let* ((,type ,chunk)
                     (,chunk-data (,(alexandria:symbolicate
                                     '#:make- struct-name)))
                     (,source (state-source (state ,png))))
-               (declare (ignorable ,type ,png))
+               (declare (ignorable ,type))
                (symbol-macrolet ,(mapcar
                                   (lambda (x)
                                     (list x
@@ -68,10 +67,10 @@
 
 (define-chunk iend (png) ()
   (when (state-decode-data (state png))
-    (loop :with out = (make-array (get-image-bytes) :element-type 'ub8)
+    (loop :with out = (make-array (get-image-bytes png) :element-type 'ub8)
           :with dstate = (3bz:make-zlib-state :output-buffer out)
           :for part :in (nreverse (data png))
-          :for read-context = (source->3bz-context part)
+          :for read-context = (source->3bz-context png part)
           :do (3bz:%resync-file-stream read-context)
               (3bz:decompress read-context dstate)
           :finally (assert (3bz:finished dstate))
@@ -250,13 +249,13 @@
         y (sb32be)
         unit-specifier (ub8))
   ;; TODO: Add user getter functions (remove below line when done)
-  (warn 'chunk-not-implemented :chunk offs :path (get-path)))
+  (warn 'chunk-not-implemented :chunk offs :path (get-path png)))
 
 (define-chunk pcal (png)
   (name original-zero original-max equation-type parameter-count unit-name)
   ;; TODO: Parse this chunk (remove below 2 lines when done)
   (skip-bytes (chunk-length pcal))
-  (warn 'chunk-not-implemented :chunk pcal :path (get-path)))
+  (warn 'chunk-not-implemented :chunk pcal :path (get-path png)))
 
 (define-chunk scal (png)
   (unit-specifier pixel-width pixel-height)
@@ -266,7 +265,7 @@
         pixel-height (parse-float:parse-float
                       (read-string :encoding :ascii)))
   ;; TODO: Add user getter functions (remove below line when done)
-  (warn 'chunk-not-implemented :chunk scal :path (get-path)))
+  (warn 'chunk-not-implemented :chunk scal :path (get-path png)))
 
 (define-chunk gifg (png)
   (disposal-method user-input-flag delay-time)
@@ -274,7 +273,7 @@
         user-input-flag (ub8)
         delay-time (ub16be))
   ;; TODO: Add user getter functions (remove below line when done)
-  (warn 'chunk-not-implemented :chunk gifg :path (get-path)))
+  (warn 'chunk-not-implemented :chunk gifg :path (get-path png)))
 
 (define-chunk gifx (png)
   (application-identifier authentication-code application-data)
@@ -282,13 +281,13 @@
         authentication-code (read-bytes 3)
         application-data (read-bytes (chunk-offset)))
   ;; TODO: Add user getter functions (remove below line when done)
-  (warn 'chunk-not-implemented :chunk gifx :path (get-path)))
+  (warn 'chunk-not-implemented :chunk gifx :path (get-path png)))
 
 (define-chunk ster (png)
   (mode)
   (setf mode (ub8))
   ;; TODO: Add user getter function (remove below line when done)
-  (warn 'chunk-not-implemented :chunk ster :path (get-path)))
+  (warn 'chunk-not-implemented :chunk ster :path (get-path png)))
 
 (define-chunk exif (png)
   (data)
@@ -298,8 +297,8 @@
                (zpb-exif:parse-exif-octets (read-bytes (chunk-offset)))
                :parsedp t)))
   ;; TODO: Add user getter function (remove below line when done)
-  (warn 'chunk-not-implemented :chunk exif :path (get-path)))
+  (warn 'chunk-not-implemented :chunk exif :path (get-path png)))
 
 (define-chunk unknown (png) ()
   (skip-bytes (chunk-length unknown))
-  (warn 'unknown-chunk-detected :chunk unknown :path (get-path)))
+  (warn 'unknown-chunk-detected :chunk unknown :path (get-path png)))

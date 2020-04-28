@@ -24,6 +24,6 @@ See LOAD-STREAM if you want to load a PNG datastream.
                               :flip-y flip-y
                               :use-static-vector static-vector
                               :source source))
-           (*png* (make-png :state state)))
-      (setf (parse-tree *png*) (parse-datastream))
-      *png*)))
+           (png (make-png :state state)))
+      (setf (parse-tree png) (parse-datastream png))
+      png)))
