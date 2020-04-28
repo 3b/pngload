@@ -68,23 +68,17 @@ jobs:
     # check out extra repos if not in QL, or version in ql is too old
     - run: mkdir -p ~/lisp/
 
-    - name: trivial-features from git
-      uses: actions/checkout@v2
-      with:
-        repository: trivial-features/trivial-features
-        path: ~/lisp/trivial-features
-
-    - name: mmap from git
-      uses: actions/checkout@v2
-      with:
-        repository: Shinmera/mmap
-        path: ~/lisp/mmap
-
     - name: 3bz from git
       uses: actions/checkout@v2
       with:
         repository: 3b/3bz
         path: ~/lisp/3bz
+
+    - name: zpb-exif from git
+      uses: actions/checkout@v2
+      with:
+        repository: 3b/zpb-exif
+        path: ~/lisp/zpb-exif
 
     - name: cache .roswell
       id: cache-dot-roswell
@@ -110,6 +104,10 @@ jobs:
         ros -e '(format t "~a:~a on ~a~%...~%~%" (lisp-implementation-type) (lisp-implementation-version) (machine-type))'
         ros -e '(format t " fixnum bits:~a~%" (integer-length most-positive-fixnum))'
         ros -e "(ql:quickload 'trivial-features)" -e '(format t "features = ~s~%" *features*)'
+
+    - name: update ql dist if we have one cached
+      shell: bash
+      run: ros -e "(ql:update-all-dists :prompt nil)"
 
     - name: clear fasl cache
       shell: bash
