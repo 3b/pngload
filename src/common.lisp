@@ -46,7 +46,7 @@
 
 (defmethod print-object ((object png) stream)
   (print-unreadable-object (object stream :type t)
-    (format stream "~ax~a@~abpp ~a"
+    (format stream "~ax~a @ ~abpp: ~a"
             (width object)
             (height object)
             (* (bit-depth object)
