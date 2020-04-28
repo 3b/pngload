@@ -14,6 +14,10 @@
   (:report (lambda (c s)
              (format s "File not found: ~a," (path (png c))))))
 
+(define-condition file-too-small (png-error) ()
+  (:report (lambda (c s)
+             (format s "File to small to be a PNG file: ~a," (path (png c))))))
+
 (define-condition invalid-png-stream (png-error) ()
   (:report (lambda (c s)
              (format s "Not a valid PNG datastream: ~a." (path (png c))))))

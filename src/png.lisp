@@ -98,7 +98,7 @@ See LOAD-FILE"
        (sb-profile:reset))))
 
 (defmacro with-png-file ((png path) &body body)
-  (alexandria:with-gensyms (state)
+  (alexandria:with-gensyms (state in)
     `(let ((,png (make-png :path (parse-namestring ,path)))
            (,state (make-state :decode-data decode
                                :flatten flatten
@@ -106,6 +106,9 @@ See LOAD-FILE"
                                :use-static-vector static-vector)))
        (unless (uiop:file-exists-p ,path)
          (error 'file-not-found :png ,png))
+       (with-open-file (,in ,path)
+         (when (< (print (file-length ,in)) 8)
+           (error 'file-too-small :png ,png)))
        (setf (state ,png) ,state)
        ,@body
        ,png)))

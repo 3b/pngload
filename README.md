@@ -59,7 +59,7 @@ New in version 2.0, pngload supports [additional extension chunk
 types](http://ftp-osl.osuosl.org/pub/libpng/documents/pngextensions.html), such
 as EXIF information.
 
-### Optionally decode metadata only
+### Optionally parse metadata only
 
 pngload can optionally parse only the metadata, skipping decoding completely, in
 order to quickly retrieve information about an image.
@@ -67,7 +67,7 @@ order to quickly retrieve information about an image.
 ### Optionally decode as a 1-dimensional array
 
 Instead of decoding to a format which is compatible with opticl, pngload can now
-decode to a flat 1-D array.This is useful for OpenGL texture uploading and some
+decode to a flat 1-D array. This is useful for OpenGL texture uploading and some
 other applications.
 
 ### Optionally flip the Y axis
