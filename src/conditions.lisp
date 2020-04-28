@@ -12,11 +12,11 @@
 
 (define-condition file-not-found (png-error) ()
   (:report (lambda (c s)
-             (format s "File not found: ~a," (get-path (png c))))))
+             (format s "File not found: ~a," (path (png c))))))
 
 (define-condition invalid-png-stream (png-error) ()
   (:report (lambda (c s)
-             (format s "Not a valid PNG datastream: ~a." (get-path (png c))))))
+             (format s "Not a valid PNG datastream: ~a." (path (png c))))))
 
 (define-condition unknown-chunk-detected (png-warning) ()
   (:report (lambda (c s)
@@ -24,7 +24,7 @@
                (format s "Unknown chunk type: ~s ~s in stream: ~a."
                        type
                        bytes
-                       (get-path (png c)))))))
+                       (path (png c)))))))
 
 (define-condition chunk-not-implemented (png-warning) ()
   (:report (lambda (c s)
@@ -33,4 +33,4 @@
                           in stream: ~a."
                        type
                        bytes
-                       (get-path (png c)))))))
+                       (path (png c)))))))

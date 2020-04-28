@@ -25,4 +25,6 @@ See LOAD-STREAM if you want to load a PNG datastream.
                                      :end size))
               (state (state png)))
           (setf (state-source state) source
-                (state-mmap-pointer state) pointer-binding))))))
+                (state-mmap-pointer state) pointer-binding
+                (parse-tree png) (parse-datastream png))))
+      png)))

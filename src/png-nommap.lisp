@@ -20,4 +20,6 @@ See LOAD-STREAM if you want to load a PNG datastream.
       (let ((source (make-instance 'file-stream-source
                                    :data stream
                                    :end (file-length stream))))
-        (setf (state-source (state png)) source)))))
+        (setf (state-source (state png)) source
+              (parse-tree png) (parse-datastream png))))
+    png))

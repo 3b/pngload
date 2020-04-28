@@ -46,7 +46,4 @@
 
 (defmethod print-object ((object png) stream)
   (print-unreadable-object (object stream :type t)
-    (format stream "~s" (source-path (state-source (state object))))))
-
-(defun get-path (png)
-  (source-path (state-source (state png))))
+    (format stream "~s" (path object))))

@@ -108,5 +108,4 @@ See LOAD-FILE"
          (error 'file-not-found :png ,png))
        (setf (state ,png) ,state)
        ,@body
-       (setf (parse-tree ,png) (parse-datastream ,png))
        ,png)))
