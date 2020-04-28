@@ -292,10 +292,10 @@
 (define-chunk exif (png)
   (data)
   ;; TODO: Parse this chunk (remove below 2 lines when done)
-  (setf data (alexandria:alist-plist
-              (zpb-exif:exif-alist
-               (zpb-exif:parse-exif-octets (read-bytes (chunk-offset)))
-               :parsedp t)))
+  #++(setf data (alexandria:alist-plist
+                 (zpb-exif:exif-alist
+                  (zpb-exif:parse-exif-octets (read-bytes (chunk-offset)))
+                  :parsedp t)))
   ;; TODO: Add user getter function (remove below line when done)
   (warn 'chunk-not-implemented :chunk exif :path (get-path png)))
 
