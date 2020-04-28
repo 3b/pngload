@@ -1,6 +1,6 @@
 (in-package #:pngload)
 
-(defmacro define-chunk-data (type (png &key (buffer t)) &body body)
+(defmacro define-chunk (type (png &key (buffer t)) &body body)
   (alexandria:with-gensyms (source chunk chunk-data)
     (let ((struct-name (alexandria:symbolicate 'chunk-data- type)))
       (destructuring-bind (slots . body) body
@@ -31,7 +31,7 @@
                    ,@body))
                ,chunk-data)))))))
 
-(define-chunk-data idat (png :buffer nil)
+(define-chunk idat (png :buffer nil)
   (data)
   (if (state-decode-data (state png))
       (progn
@@ -39,7 +39,7 @@
         (push data (data png)))
       (skip-bytes (chunk-length idat))))
 
-(define-chunk-data ihdr (png)
+(define-chunk ihdr (png)
   (width height bit-depth colour-type compression-method filter-method
          interlace-method)
   (setf width (ub32be)
@@ -66,7 +66,7 @@
         (filter-method png) (ecase filter-method
                               (0 :standard))))
 
-(define-chunk-data iend (png) ()
+(define-chunk iend (png) ()
   (when (state-decode-data (state png))
     (loop :with out = (make-array (get-image-bytes) :element-type 'ub8)
           :with dstate = (3bz:make-zlib-state :output-buffer out)
@@ -77,7 +77,7 @@
           :finally (assert (3bz:finished dstate))
                    (setf (data png) out))))
 
-(define-chunk-data plte (png)
+(define-chunk plte (png)
   (palette-entries)
   (let ((entry-count (/ (chunk-length plte) 3)))
     (setf palette-entries (make-array `(,entry-count 3) :element-type 'ub8))
@@ -87,7 +87,7 @@
     (setf (palette-count png) entry-count
           (palette png) palette-entries)))
 
-(define-chunk-data chrm (png)
+(define-chunk chrm (png)
   (white-point-x white-point-y red-x red-y green-x green-y blue-x blue-y)
   (setf white-point-x (ub32be)
         white-point-y (ub32be)
@@ -98,11 +98,11 @@
         blue-x (ub32be)
         blue-y (ub32be)))
 
-(define-chunk-data gama (png) (image-gamma)
+(define-chunk gama (png) (image-gamma)
   (setf image-gamma (ub32be)
         (gamma png) (float (/ image-gamma 100000))))
 
-(define-chunk-data iccp (png)
+(define-chunk iccp (png)
   (profile-name compression-method compressed-profile)
   (setf profile-name (read-string :bytes 79
                                   :encoding :latin-1
@@ -110,7 +110,7 @@
         compression-method (ub8)
         compressed-profile (read-bytes (chunk-offset) :zlib t)))
 
-(define-chunk-data sbit (png)
+(define-chunk sbit (png)
   (greyscale red green blue alpha)
   (case (color-type png)
     (:greyscale
@@ -128,7 +128,7 @@
            blue (ub8)
            alpha (ub8)))))
 
-(define-chunk-data srgb (png)
+(define-chunk srgb (png)
   (rendering-intent)
   (setf rendering-intent (ub8)
         (rendering-intent png) (ecase rendering-intent
@@ -137,7 +137,7 @@
                                  (2 :saturation)
                                  (3 :absolute-colorimetric))))
 
-(define-chunk-data bkgd (png)
+(define-chunk bkgd (png)
   (greyscale red green blue palette-index)
   (case (color-type png)
     ((:greyscale :greyscale-alpha)
@@ -149,14 +149,14 @@
     (:indexed-colour
      (setf palette-index (ub8)))))
 
-(define-chunk-data hist (png)
+(define-chunk hist (png)
   (frequencies)
   (let ((count (palette-count png)))
     (setf frequencies (make-array count :element-type 'ub16))
     (dotimes (i count)
       (setf (aref frequencies i) (ub16be)))))
 
-(define-chunk-data trns (png)
+(define-chunk trns (png)
   (grey red blue green alpha-values)
   (ecase (color-type png)
     (:greyscale
@@ -176,7 +176,7 @@
          (setf (aref alpha-values i) (ub8)))
        (setf (transparency png) alpha-values)))))
 
-(define-chunk-data phys (png)
+(define-chunk phys (png)
   (pixels-per-unit-x pixels-per-unit-y unit-specifier)
   (setf pixels-per-unit-x (ub32be)
         pixels-per-unit-y (ub32be)
@@ -187,7 +187,7 @@
                                        (0 :unknown)
                                        (1 :meter)))))
 
-(define-chunk-data splt (png)
+(define-chunk splt (png)
   (palette-name sample-depth palette-entries)
   (setf palette-name (read-string :bytes 79
                                   :encoding :latin-1
@@ -204,7 +204,7 @@
                 (4 (ub32be)))))
       (setf (aref palette-entries entry 4) (ub16be)))))
 
-(define-chunk-data time (png)
+(define-chunk time (png)
   (year month day hour minute second)
   (setf year (ub16be)
         month (ub8)
@@ -215,7 +215,7 @@
         (last-modified png) (encode-universal-time
                              second minute hour day month year)))
 
-(define-chunk-data itxt (png)
+(define-chunk itxt (png)
   (keyword compression-flag compression-method language-tag translated-keyword
            text)
   (setf keyword (read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
@@ -228,13 +228,13 @@
       (setf text (read-string :encoding :utf-8)))
   (push (list language-tag keyword translated-keyword text) (text png)))
 
-(define-chunk-data text (png)
+(define-chunk text (png)
   (keyword text-string)
   (setf keyword (read-string :bytes 80 :encoding :latin-1 :null-terminated-p t)
         text-string (read-string :encoding :latin-1))
   (push (list keyword text-string) (text png)))
 
-(define-chunk-data ztxt (png)
+(define-chunk ztxt (png)
   (keyword compression-method compressed-text-datastream)
   (setf keyword (read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
         compression-method (ub8)
@@ -244,7 +244,7 @@
 ;;; Extension chunks
 ;;; http://ftp-osl.osuosl.org/pub/libpng/documents/pngextensions.html#Chunks
 
-(define-chunk-data offs (png)
+(define-chunk offs (png)
   (x y unit-specifier)
   (setf x (sb32be)
         y (sb32be)
@@ -252,13 +252,13 @@
   ;; TODO: Add user getter functions (remove below line when done)
   (warn 'chunk-not-implemented :chunk pcal))
 
-(define-chunk-data pcal (png)
+(define-chunk pcal (png)
   (name original-zero original-max equation-type parameter-count unit-name)
   ;; TODO: Parse this chunk (remove below 2 lines when done)
   (skip-bytes (chunk-length pcal))
   (warn 'chunk-not-implemented :chunk pcal))
 
-(define-chunk-data scal (png)
+(define-chunk scal (png)
   (unit-specifier pixel-width pixel-height)
   (setf unit-specifier (ub8)
         pixel-width (parse-float:parse-float
@@ -268,7 +268,7 @@
   ;; TODO: Add user getter functions (remove below line when done)
   (warn 'chunk-not-implemented :chunk scal))
 
-(define-chunk-data gifg (png)
+(define-chunk gifg (png)
   (disposal-method user-input-flag delay-time)
   (setf disposal-method (ub8)
         user-input-flag (ub8)
@@ -276,25 +276,25 @@
   ;; TODO: Add user getter functions (remove below line when done)
   (warn 'chunk-not-implemented :chunk gifg))
 
-(define-chunk-data gifx (png)
+(define-chunk gifx (png)
   (application-identifier authentication-code application-data)
   (setf application-identifier (read-string :bytes 8 :encoding :ascii)
-        authentication-code (loop :repeat 3 :collect (ub8))
+        authentication-code (read-bytes 3)
         application-data (read-bytes (chunk-offset)))
   ;; TODO: Add user getter functions (remove below line when done)
   (warn 'chunk-not-implemented :chunk gifx))
 
-(define-chunk-data ster (png)
+(define-chunk ster (png)
   (mode)
   (setf mode (ub8))
   ;; TODO: Add user getter function (remove below line when done)
   (warn 'chunk-not-implemented :chunk ster))
 
-(define-chunk-data exif (png) ()
+(define-chunk exif (png) ()
   ;; TODO: Parse this chunk (remove below 2 lines when done)
   (skip-bytes (chunk-length exif))
   (warn 'chunk-not-implemented :chunk exif))
 
-(define-chunk-data unknown (png) ()
+(define-chunk unknown (png) ()
   (skip-bytes (chunk-length unknown))
   (warn 'unknown-chunk-detected :chunk unknown))
