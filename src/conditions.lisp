@@ -1,13 +1,14 @@
 (in-package #:pngload)
 
-
-(define-condition png-warning (warning)
+(define-condition png-condition ()
   ((%chunk :reader chunk
            :initarg :chunk)
    (%path :reader path
           :initarg :path)))
 
-(define-condition png-error (error) ())
+(define-condition png-warning (png-condition warning) ())
+
+(define-condition png-error (png-condition error) ())
 
 (define-condition invalid-png-stream (png-error) ()
   (:report (lambda (c s)

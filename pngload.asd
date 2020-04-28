@@ -13,7 +13,7 @@
                (:feature (:and (:not :mezzano) (:not :abcl)) #:mmap)
                #:parse-float
                (:feature (:and (:not :clisp) (:not :abcl)) #:static-vectors)
-               #:swap-bytes)
+               #:swap-bytes
   :pathname "src"
   :serial t
   :components
