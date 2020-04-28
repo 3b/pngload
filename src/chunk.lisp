@@ -12,10 +12,11 @@
         :collect (ldb (byte 8 i) type) :into result
         :finally (let* ((bytes (nreverse result))
                         (str (map 'string #'code-char bytes)))
-                   (values (if (every #'graphic-char-p str)
-                               str
-                               (coerce str 'list))
-                           bytes))))
+                   (return
+                     (values (if (every #'graphic-char-p str)
+                                 str
+                                 (coerce str 'list))
+                             bytes)))))
 
 (defun parse-chunk-data (chunk)
   (case (chunk-type chunk)
