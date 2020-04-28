@@ -107,7 +107,7 @@ See LOAD-FILE"
        (unless (uiop:file-exists-p ,path)
          (error 'file-not-found :png ,png))
        (with-open-file (,in ,path)
-         (when (< (print (file-length ,in)) 8)
+         (when (< (file-length ,in) 8)
            (error 'file-too-small :png ,png)))
        (setf (state ,png) ,state)
        ,@body
