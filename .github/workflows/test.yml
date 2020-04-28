@@ -99,6 +99,10 @@ jobs:
         ros -e '(format t " fixnum bits:~a~%" (integer-length most-positive-fixnum))'
         ros -e "(ql:quickload 'trivial-features)" -e '(format t "features = ~s~%" *features*)'
 
+    - name: update ql dist if we have one cached
+      shell: bash
+      run: ros -e "(ql:update-all-dists :prompt nil)"
+
     - name: clear fasl cache
       shell: bash
       run: |
