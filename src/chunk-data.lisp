@@ -250,7 +250,7 @@
         y (sb32be)
         unit-specifier (ub8))
   ;; TODO: Add user getter functions (remove below line when done)
-  (warn 'chunk-not-implemented :chunk pcal))
+  (warn 'chunk-not-implemented :chunk offs))
 
 (define-chunk-data pcal (png)
   (name original-zero original-max equation-type parameter-count unit-name)
