@@ -14,6 +14,7 @@
                #:parse-float
                (:feature (:and (:not :clisp) (:not :abcl)) #:static-vectors)
                #:swap-bytes
+               #:zpb-exif)
   :pathname "src"
   :serial t
   :components

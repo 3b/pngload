@@ -290,10 +290,15 @@
   ;; TODO: Add user getter function (remove below line when done)
   (warn 'chunk-not-implemented :chunk ster :path (get-path)))
 
-(define-chunk exif (png) ()
+(define-chunk exif (png)
+  (data)
   ;; TODO: Parse this chunk (remove below 2 lines when done)
-  (skip-bytes (chunk-length exif))
-  (warn 'chunk-not-implemented :chunk exif))
+  (setf data (alexandria:alist-plist
+              (zpb-exif:exif-alist
+               (zpb-exif:parse-exif-octets (read-bytes (chunk-offset)))
+               :parsedp t)))
+  ;; TODO: Add user getter function (remove below line when done)
+  (warn 'chunk-not-implemented :chunk exif :path (get-path)))
 
 (define-chunk unknown (png) ()
   (skip-bytes (chunk-length unknown))
