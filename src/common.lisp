@@ -46,4 +46,9 @@
 
 (defmethod print-object ((object png) stream)
   (print-unreadable-object (object stream :type t)
-    (format stream "~s" (path object))))
+    (format stream "~ax~a@~abpp ~a"
+            (width object)
+            (height object)
+            (* (bit-depth object)
+               (get-channel-count object))
+            (path object))))
