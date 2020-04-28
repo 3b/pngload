@@ -4,28 +4,33 @@ A PNG (Portable Network Graphics) image format decoder.
 
 ## Overview
 
-pngload can be used to load images in the PNG image format, both from files
-on disk, or streams in memory. This library was written out of frustration with
+pngload can be used to load images in the PNG image format, both from files on
+disk, or streams in memory. This library was written out of frustration with
 png-read, which was the only native Common Lisp code that supports PNG.
 
 What makes pngload different than png-read?
 
 ### Speed
 
-png-read is very slow. For a simple test on modern hardware, it takes png-read
-0.95 [1] seconds to load an image that takes cl-png (A CFFI wrapper for libpng)
-0.028s. pngload takes 0.145s.
+pngload is optimized for speed and portability across many different Common Lisp
+implementation and architecture combinations. On 64-bit SBCL it is roughly 3x
+faster than the png-read library when decoding a large 4096x4096 RGBA image:
 
-[1] Note that I recently applied some SBCL-specific compiler optimizations to
-png-read, so this figure will be lower on at least SBCL. Still though,
-pngload is approximately 2.5-5x faster, depending on the image properties.
+- pngload: 1.039s
+- png-read: 2.986s
+
+New in version 2.0: To overcome some performance bottlenecks, we wrote [our
+own](https://github.com/3b/3bz) decompressor, as the alternatives were too slow
+and not easily optimizable.
+
+Also, we use the [mmap](https://github.com/Shinmera/mmap) library on operating
+systems that support it, with a fallback path when not supported.
 
 ### Cleaner code
 
-pngload should be a lot more hackable, and have more of an educational
-value than png-read, even after adding lots of type declarations and
-restructuring the code away from its original cleanliness in favor of
-performance.
+pngload should be a lot more hackable, and have more of an educational value
+than png-read, even after adding lots of type declarations and restructuring the
+code away from its original cleanliness in favor of performance.
 
 ### Full support for all chunks
 
@@ -39,35 +44,43 @@ parsed, this will be stored as a floating-point value, rather than multiplied by
 
 ### Fully conforming with the PNG specification
 
-Able to load all images in [PNGSuite](http://www.schaik.com/pngsuite/)
-correctly. png-read claims that it can load them all, but they were not checked
-for validity.
+pngload is able to load all images in
+[PNGSuite](http://www.schaik.com/pngsuite/) correctly. png-read claims that it
+can load them all, but they were not checked for validity.
 
 ### Stores data in a format that is expected by [opticl](https://github.com/slyrus/opticl)
 
-opticl has supported pngload since its first release, which gives you
-faster PNG loading automatically if you were already using opticl.
+opticl has supported pngload since its first release, which gives you faster PNG
+loading automatically if you were already using opticl.
+
+### Support for PNG extensions
+
+New in version 2.0, pngload supports [additional extension chunk
+types](http://ftp-osl.osuosl.org/pub/libpng/documents/pngextensions.html), such
+as EXIF information.
 
 ### Optionally decode metadata only
 
-Can optionally parse only the metadata, skipping decoding completely, in order
-to quickly retrieve information about an image.
+pngload can optionally parse only the metadata, skipping decoding completely, in
+order to quickly retrieve information about an image.
 
 ### Optionally decode as a 1-dimensional array
 
-Instead of decoding to a format which is compatible with opticl. This is useful
-for OpenGL texture uploading.
+Instead of decoding to a format which is compatible with opticl, pngload can now
+decode to a flat 1-D array.This is useful for OpenGL texture uploading and some
+other applications.
 
 ### Optionally flip the Y axis
 
-Can optionally flip the Y axis, for when the origin is expected to be at the
-bottom left instead of the top left, as with OpenGL texture rendering.
+pngload can optionally flip the Y axis when decoding, for when the origin is
+expected to be at the bottom left instead of the top left, as with OpenGL
+texture rendering.
 
 ### Optionally write to foreign memory
 
-Can optionally write to foreign memory using static-vectors. This is useful when
-needing to efficiently pass a pointer to the image data with a foreign library,
-such as OpenGL.
+pngload can optionally write to foreign memory using static-vectors. This is
+useful when needing to efficiently pass a pointer to the image data with a
+foreign library, such as with OpenGL.
 
 ## Install
 
