@@ -6,6 +6,10 @@
   data
   crc)
 
+(defmethod print-object ((object chunk) stream)
+  (print-unreadable-object (object stream :type t)
+    (format stream "~a" (get-chunk-type object))))
+
 (defun get-chunk-type (chunk)
   (loop :with type = (chunk-type chunk)
         :for i :below 32 :by 8
