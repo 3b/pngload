@@ -108,7 +108,7 @@
   (declare (type ub8a1d data)
            (type (and fixnum (integer 0)) y row-start)
            (type (and fixnum (integer 1)) row-bytes pixel-bytes)
-           (optimize speed ))
+           (optimize speed (safety 0)))
   (if (zerop y)
       ;; paeth on the first row is equivalent to a sub
       (unfilter-row-sub y data row-start row-bytes pixel-bytes)
@@ -389,7 +389,6 @@
           (ub16a1d (f))
           (t (f :opt nil)))))))
 
-(declaim (inline maybe-flip))
 (defun maybe-flip (png data)
   (when (state-flip-y (state png))
     (flip png data)))
