@@ -11,7 +11,8 @@
                #:local-time
                #:opticl
                #:png-read
-               #:pngload)
+               #:pngload
+               #:uiop)
   :pathname "src"
   :serial t
   :components
