@@ -52,7 +52,7 @@ See LOAD-FILE"
 (defun make-grey-map (depth)
   (assert (< depth 8))
   (let ((n (expt 2 depth)))
-    (make-array n :element-type '(unsigned-byte 8)
+    (make-array n :element-type 'ub8
                   :initial-contents
                   (loop :for i :below n
                         :collect (floor (+ (/ (* i 255) (1- n)) 1/2))))))

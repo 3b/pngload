@@ -36,7 +36,7 @@
              (c (third dims))
              (new (make-array (list w h (1+ (or c 1)))
                               :element-type (if (< (png-read:bit-depth png) 8)
-                                                '(unsigned-byte 8)
+                                                'ub8
                                                 (array-element-type old)))))
         (flet ((old (x y i)
                  (cond
