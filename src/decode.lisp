@@ -135,7 +135,7 @@
                                  ((and (<= pa pb) (<= pa pc)) av)
                                  ((<= pb pc) bv)
                                  (t cv))))
-                    (declare (ub8 a b c av bv cv p pa pb pc))
+                    (declare (fixnum a b c av bv cv p pa pb pc))
                     (setf (aref data x)
                           (ldb (byte 8 0) (+ (aref data x) tmp2))))))))
 
@@ -389,6 +389,7 @@
           (ub16a1d (f))
           (t (f :opt nil)))))))
 
+(declaim (inline maybe-flip))
 (defun maybe-flip (png data)
   (when (state-flip-y (state png))
     (flip png data)))
