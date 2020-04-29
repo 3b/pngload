@@ -24,7 +24,6 @@ See LOAD-FILE if you want to load a PNG datastream from a file on disk."
     (setf (parse-tree png) (parse-datastream png))
     png))
 
-
 #- (or clisp abcl)
 (defmacro with-png-in-static-vector ((png-var path-or-stream
                                       &key (decode t) flip-y) &body body)
