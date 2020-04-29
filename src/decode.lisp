@@ -64,7 +64,7 @@
 ;;;   | a | x |
 ;;;   +---+---+
 ;;; Where x is the 'current' pixel
-;;;
+
 (defun unfilter-row-sub (y data row-start row-bytes pixel-bytes)
   (declare (type ub8a1d data)
            (type (and fixnum (integer 0)) y row-start)
@@ -83,12 +83,11 @@
            (type (and fixnum (integer 1)) row-bytes  pixel-bytes)
            (ignore pixel-bytes)
            (optimize speed))
-  (when (>= y 1)
-    (loop
-      :for x :from row-start :below (+ row-start (1- row-bytes))
-      :for b = (- x row-bytes)
-      :do (setf (aref data x)
-                (ldb (byte 8 0) (+ (aref data x) (aref data b)))))))
+  (when (plusp y)
+    (loop :for x :from row-start :below (+ row-start (1- row-bytes))
+          :for b = (- x row-bytes)
+          :do (setf (aref data x)
+                    (ldb (byte 8 0) (+ (aref data x) (aref data b)))))))
 
 (defun unfilter-row-average (y data row-start row-bytes pixel-bytes)
   (declare (type ub8a1d data)
@@ -102,45 +101,43 @@
                   (ldb (byte 8 0)
                        (+ (aref data x)
                           (floor (+ (if (>= a row-start) (aref data a) 0)
-                                    (if (>= y 1) (aref data b) 0))
+                                    (if (plusp y) (aref data b) 0))
                                  2))))))
 
 (defun unfilter-row-paeth (y data row-start row-bytes pixel-bytes)
   (declare (type ub8a1d data)
            (type (and fixnum (integer 0)) y row-start)
-           (type (and fixnum (integer 1)) row-bytes  pixel-bytes)
-           (optimize speed))
+           (type (and fixnum (integer 1)) row-bytes pixel-bytes)
+           (optimize speed (safety 0)))
   (if (zerop y)
       ;; paeth on the first row is equivalent to a sub
       (unfilter-row-sub y data row-start row-bytes pixel-bytes)
-      (loop :initially
-        ;; Handle the first column specifically so we don't have to worry about
-        ;; it later
-        (loop :for x :from row-start :below (+ row-start pixel-bytes)
+      (let ((tmp1 (+ row-start pixel-bytes)))
+        (declare (fixnum tmp1))
+        ;; Handle the first column specifically so we don't have to worry
+        ;; about it later
+        (loop :for x fixnum :from row-start :below tmp1
               :do (setf (aref data x)
                         (ldb (byte 8 0)
                              (+ (aref data x) (aref data (- x row-bytes))))))
-            :for x fixnum :from (+ row-start pixel-bytes)
-              :below (+ row-start (1- row-bytes))
-            :for a fixnum = (- x pixel-bytes)
-            :for b fixnum = (- x row-bytes)
-            :for c fixnum = (- b pixel-bytes)
-            :do (setf (aref data x)
-                      (ldb (byte 8 0)
-                           (+ (aref data x)
-                              ;; We know we're not on the first row or column so
-                              ;; we can just branch off the values and not their
-                              ;; positions
-                              (let* ((av (aref data a))
-                                     (bv (aref data b))
-                                     (cv (aref data c))
-                                     (p (- (+ av bv) cv))
-                                     (pa (abs (- p av)))
-                                     (pb (abs (- p bv)))
-                                     (pc (abs (- p cv))))
-                                (cond ((and (<= pa pb) (<= pa pc)) av)
-                                      ((<= pb pc) bv)
-                                      (t cv)))))))))
+        (loop :for x fixnum :from tmp1 :below (+ row-start (1- row-bytes))
+              :do (let* ((a (- x pixel-bytes))
+                         (b (- x row-bytes))
+                         (c (- b pixel-bytes))
+                         (av (aref data a))
+                         (bv (aref data b))
+                         (cv (aref data c))
+                         (p (- (+ av bv) cv))
+                         (pa (abs (- p av)))
+                         (pb (abs (- p bv)))
+                         (pc (abs (- p cv)))
+                         (tmp2 (cond
+                                 ((and (<= pa pb) (<= pa pc)) av)
+                                 ((<= pb pc) bv)
+                                 (t cv))))
+                    (declare (ub8 a b c av bv cv p pa pb pc))
+                    (setf (aref data x)
+                          (ldb (byte 8 0) (+ (aref data x) tmp2))))))))
 
 (defun unfilter (png data width height start)
   (declare (ub32 width height)
@@ -152,29 +149,27 @@
         :for y fixnum :below height
         :for in-start fixnum :from start :by row-bytes
         :for row-start fixnum :from (1+ start) :by row-bytes
-        :do
-           (ecase (aref data in-start)
-             (#.+filter-type-none+ ; nothing tbd
-              nil)
-             (#.+filter-type-sub+
-              (unfilter-row-sub y data row-start row-bytes pixel-bytes))
-             (#.+filter-type-up+
-              (unfilter-row-up y data row-start row-bytes pixel-bytes))
-             (#.+filter-type-average+
-              (unfilter-row-average y data row-start row-bytes pixel-bytes))
-             (#.+filter-type-paeth+
-              (unfilter-row-paeth y data row-start row-bytes pixel-bytes)))
+        :do (ecase (aref data in-start)
+              (#.+filter-type-paeth+
+               (unfilter-row-paeth y data row-start row-bytes pixel-bytes))
+              (#.+filter-type-average+
+               (unfilter-row-average y data row-start row-bytes pixel-bytes))
+              (#.+filter-type-sub+
+               (unfilter-row-sub y data row-start row-bytes pixel-bytes))
+              (#.+filter-type-up+
+               (unfilter-row-up y data row-start row-bytes pixel-bytes))
+              (#.+filter-type-none+ ; nothing tbd
+               nil))
         :finally
            ;; Now compact row data by removing the filter bytes
-           (loop
-             :for y :below height
-             :for dst-data :from start :by scanline-bytes
-             :for row-start fixnum :from (1+ start) :by row-bytes
-             :do (replace data
-                          data
-                          :start1 dst-data
-                          :start2 row-start
-                          :end2 (+ row-start scanline-bytes)))))
+           (loop :for y :below height
+                 :for dst-data :from start :by scanline-bytes
+                 :for row-start fixnum :from (1+ start) :by row-bytes
+                 :do (replace data
+                              data
+                              :start1 dst-data
+                              :start2 row-start
+                              :end2 (+ row-start scanline-bytes)))))
 
 (defmacro maybe-flatten (png dims bit-depth)
   (let ((nd-fn-sym (intern (format nil "COPY/~dD/~d" dims bit-depth)))
@@ -394,51 +389,52 @@
           (ub16a1d (f))
           (t (f :opt nil)))))))
 
+(declaim (inline maybe-flip))
 (defun maybe-flip (png data)
   (when (state-flip-y (state png))
     (flip png data)))
 
 (defun decode (png)
-  (let ((image-data (data png)))
+  (let ((image-data (data png))
+        (width (width png))
+        (height (height png))
+        (bit-depth (bit-depth png))
+        (transparency (transparency png)))
     (declare (ub8a1d image-data))
-    (let ((width (width png))
-          (height (height png))
-          (bit-depth (bit-depth png))
-          (transparency (transparency png)))
-      (if (eq (interlace-method png) :null)
-          (unfilter png image-data width height 0)
-          (setf image-data (deinterlace-adam7 png image-data)))
-      (assert (and (typep bit-depth 'ub8)
-                   (member bit-depth '(1 2 4 8 16))))
-      (setf (data png) (allocate-image-data png))
-      (let ((data (data png)))
-        (ecase (color-type png)
-          ((:truecolour :truecolour-alpha :greyscale-alpha)
+    (if (eq (interlace-method png) :null)
+        (unfilter png image-data width height 0)
+        (setf image-data (deinterlace-adam7 png image-data)))
+    (assert (and (typep bit-depth 'ub8)
+                 (member bit-depth '(1 2 4 8 16))))
+    (setf (data png) (allocate-image-data png))
+    (let ((data (data png)))
+      (ecase (color-type png)
+        ((:truecolour :truecolour-alpha :greyscale-alpha)
+         (ecase bit-depth
+           (8 (maybe-flatten png 3 8))
+           (16 (maybe-flatten png 3 16)))
+         (when transparency
            (ecase bit-depth
-             (8 (maybe-flatten png 3 8))
-             (16 (maybe-flatten png 3 16)))
-           (when transparency
+             (8 (trns png #xff))
+             (16 (trns png #xffff)))))
+        (:greyscale
+         (if transparency
              (ecase bit-depth
-               (8 (trns png #xff))
-               (16 (trns png #xffff)))))
-          (:greyscale
-           (if transparency
-               (ecase bit-depth
-                 (8 (maybe-flatten png 3 8) (trns png #xff))
-                 (16 (maybe-flatten png 3 16) (trns png #xffff))
-                 ((1 2 4)
-                  (copy/2d/sub png image-data)
-                  (trns png #xff)
-                  (maybe-flip png data)))
-               (ecase bit-depth
-                 (8 (maybe-flatten png 2 8))
-                 (16 (maybe-flatten png 2 16))
-                 ((1 2 4)
-                  (copy/2d/sub png image-data)
-                  (maybe-flip png data)))))
-          (:indexed-colour
-           (ecase bit-depth
-             (8 (copy/pal/8 png image-data))
-             ((1 2 4) (copy/pal/sub png image-data)))
-           (maybe-flip png data)))))
-    png))
+               (8 (maybe-flatten png 3 8) (trns png #xff))
+               (16 (maybe-flatten png 3 16) (trns png #xffff))
+               ((1 2 4)
+                (copy/2d/sub png image-data)
+                (trns png #xff)
+                (maybe-flip png data)))
+             (ecase bit-depth
+               (8 (maybe-flatten png 2 8))
+               (16 (maybe-flatten png 2 16))
+               ((1 2 4)
+                (copy/2d/sub png image-data)
+                (maybe-flip png data)))))
+        (:indexed-colour
+         (ecase bit-depth
+           (8 (copy/pal/8 png image-data))
+           ((1 2 4) (copy/pal/sub png image-data)))
+         (maybe-flip png data)))))
+  png)

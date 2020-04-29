@@ -133,6 +133,7 @@
             (float (local-time:timestamp-difference (local-time:now) start)))))
 
 (defun test-read-times (file &key (count 1))
+  (load-file file) ; warmup
   (test-read-time "pngload" #'load-file file count)
   (test-read-time "png-read" #'png-read:read-png-file file count)
   (test-read-time "opticl" #'opticl:read-image-file file count))
