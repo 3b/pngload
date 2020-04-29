@@ -64,7 +64,8 @@ See LOAD-FILE"
            (height (height png))
            (bit-depth (bit-depth png))
            (channels (get-image-channels png))
-           (grey-channels (- channels (if (transparency png) 1 0)))
+           (grey-channels (- channels
+                             (if (state-transparency (state png)) 1 0)))
            (data (data png))
            (stride (* width channels)))
       (flet ((%data (y x c)

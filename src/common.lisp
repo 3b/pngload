@@ -18,7 +18,10 @@
   flip-y
   use-static-vector
   source
-  mmap-pointer)
+  mmap-pointer
+  interlace-method
+  palette
+  transparency)
 
 (defstruct (png (:conc-name nil))
   path
@@ -28,18 +31,6 @@
   height
   bit-depth
   color-type
-  (metadata (make-hash-table :test #'eq))
-  (palette-count 0)
-  palette
-  (gamma 1.0)
-  transparency
-  rendering-intent
-  compression-method
-  interlace-method
-  filter-method
-  (pixel-size '(:x 1 :y 1 :unit :unknown))
-  last-modified
-  text
   data)
 
 (defmethod print-object ((object png) stream)

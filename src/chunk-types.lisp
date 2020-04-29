@@ -51,19 +51,13 @@
         (width png) width
         (height png) height
         (bit-depth png) bit-depth
+        (state-interlace-method (state png)) interlace-method
         (color-type png) (ecase colour-type
                            (0 :greyscale)
                            (2 :truecolour)
                            (3 :indexed-colour)
                            (4 :greyscale-alpha)
-                           (6 :truecolour-alpha))
-        (compression-method png) (ecase compression-method
-                                   (0 :zlib))
-        (interlace-method png) (ecase interlace-method
-                                 (0 :null)
-                                 (1 :adam7))
-        (filter-method png) (ecase filter-method
-                              (0 :standard))))
+                           (6 :truecolour-alpha))))
 
 (define-chunk iend (png) ()
   (when (state-decode-data (state png))
@@ -77,14 +71,13 @@
                    (setf (data png) out))))
 
 (define-chunk plte (png)
-  (palette-entries)
+  (palette)
   (let ((entry-count (/ (chunk-length plte) 3)))
-    (setf palette-entries (make-array `(,entry-count 3) :element-type 'ub8))
+    (setf palette (make-array `(,entry-count 3) :element-type 'ub8))
     (dotimes (entry entry-count)
       (dotimes (sample 3)
-        (setf (aref palette-entries entry sample) (ub8))))
-    (setf (palette-count png) entry-count
-          (palette png) palette-entries)))
+        (setf (aref palette entry sample) (ub8)
+              (state-palette (state png)) palette)))))
 
 (define-chunk chrm (png)
   (white-point-x white-point-y red-x red-y green-x green-y blue-x blue-y)
@@ -98,8 +91,7 @@
         blue-y (ub32be)))
 
 (define-chunk gama (png) (image-gamma)
-  (setf image-gamma (ub32be)
-        (gamma png) (float (/ image-gamma 100000))))
+  (setf image-gamma (ub32be)))
 
 (define-chunk iccp (png)
   (profile-name compression-method compressed-profile)
@@ -129,12 +121,7 @@
 
 (define-chunk srgb (png)
   (rendering-intent)
-  (setf rendering-intent (ub8)
-        (rendering-intent png) (ecase rendering-intent
-                                 (0 :perceptual)
-                                 (1 :relative-colorimetric)
-                                 (2 :saturation)
-                                 (3 :absolute-colorimetric))))
+  (setf rendering-intent (ub8)))
 
 (define-chunk bkgd (png)
   (greyscale red green blue palette-index)
@@ -150,7 +137,7 @@
 
 (define-chunk hist (png)
   (frequencies)
-  (let ((count (palette-count png)))
+  (let ((count (array-dimension (state-palette (state png)) 0)))
     (setf frequencies (make-array count :element-type 'ub16))
     (dotimes (i count)
       (setf (aref frequencies i) (ub16be)))))
@@ -160,12 +147,12 @@
   (ecase (color-type png)
     (:greyscale
      (setf grey (ub16be))
-     (setf (transparency png) grey))
+     (setf (state-transparency (state png)) grey))
     (:truecolour
      (setf red (ub16be)
            blue (ub16be)
            green (ub16be))
-     (setf (transparency png)
+     (setf (state-transparency (state png))
            (make-array 3 :element-type 'ub16
                          :initial-contents (list red green blue))))
     (:indexed-colour
@@ -173,18 +160,13 @@
        (setf alpha-values (make-array size :element-type 'ub8))
        (dotimes (i size)
          (setf (aref alpha-values i) (ub8)))
-       (setf (transparency png) alpha-values)))))
+       (setf (state-transparency (state png)) alpha-values)))))
 
 (define-chunk phys (png)
   (pixels-per-unit-x pixels-per-unit-y unit-specifier)
   (setf pixels-per-unit-x (ub32be)
         pixels-per-unit-y (ub32be)
-        unit-specifier (ub8)
-        (pixel-size png) (list :x pixels-per-unit-x
-                               :y pixels-per-unit-y
-                               :unit (ecase unit-specifier
-                                       (0 :unknown)
-                                       (1 :meter)))))
+        unit-specifier (ub8)))
 
 (define-chunk splt (png)
   (palette-name sample-depth palette-entries)
@@ -210,9 +192,7 @@
         day (ub8)
         hour (ub8)
         minute (ub8)
-        second (ub8)
-        (last-modified png) (encode-universal-time
-                             second minute hour day month year)))
+        second (ub8)))
 
 (define-chunk itxt (png)
   (keyword compression-flag compression-method language-tag translated-keyword
@@ -224,21 +204,18 @@
         translated-keyword (read-string :encoding :utf-8 :null-terminated-p t))
   (if (= compression-flag 1)
       (setf text (read-string :encoding :utf-8 :zlib t))
-      (setf text (read-string :encoding :utf-8)))
-  (push (list language-tag keyword translated-keyword text) (text png)))
+      (setf text (read-string :encoding :utf-8))))
 
 (define-chunk text (png)
   (keyword text-string)
   (setf keyword (read-string :bytes 80 :encoding :latin-1 :null-terminated-p t)
-        text-string (read-string :encoding :latin-1))
-  (push (list keyword text-string) (text png)))
+        text-string (read-string :encoding :latin-1)))
 
 (define-chunk ztxt (png)
   (keyword compression-method compressed-text-datastream)
   (setf keyword (read-string :bytes 79 :encoding :latin-1 :null-terminated-p t)
         compression-method (ub8)
-        compressed-text-datastream (read-string :encoding :latin-1 :zlib t))
-  (push (list keyword compressed-text-datastream) (text png)))
+        compressed-text-datastream (read-string :encoding :latin-1 :zlib t)))
 
 ;;; Extension chunks
 ;;; http://ftp-osl.osuosl.org/pub/libpng/documents/pngextensions.html#Chunks

@@ -13,10 +13,10 @@
 (defun get-image-bytes (png)
   (let ((width (width png))
         (height (height png)))
-    (ecase (interlace-method png)
-      (:null
+    (ecase (state-interlace-method (state png))
+      (0
        (+ height (* height (get-scanline-bytes png width))))
-      (:adam7
+      (1
        (loop :for (width height) :in (calculate-sub-image-dimensions png)
              :sum (* height (1+ (get-scanline-bytes png width))))))))
 
@@ -29,7 +29,7 @@
 
 (defun get-image-channels (png)
   (let ((channels (get-image-raw-channels png)))
-    (when (transparency png)
+    (when (state-transparency (state png))
       (assert (member (color-type png)
                       '(:truecolour :indexed-colour :greyscale)))
       (incf channels))
@@ -261,9 +261,10 @@
                                         (aref image-data (1+ s))))))))))
 
 (defun copy/pal/8 (png image-data)
-  (let ((data (data png))
-        (palette (palette png))
-        (transparency (transparency png)))
+  (let* ((state (state png))
+         (data (data png))
+         (palette (state-palette state))
+         (transparency (state-transparency state)))
     (macrolet ((copy ()
                  `(loop :with c = (get-image-channels png)
                         :for d :below (array-total-size data) :by c
@@ -284,10 +285,11 @@
           (locally (declare (ub8a3d data)) (copy))))))
 
 (defun copy/pal/sub (png image-data)
-  (loop :with width = (width png)
+  (loop :with state = (state png)
+        :with width = (width png)
         :with bit-depth = (bit-depth png)
-        :with palette = (palette png)
-        :with transparency = (transparency png)
+        :with palette = (state-palette state)
+        :with transparency = (state-transparency state)
         :with scanline-bytes = (get-scanline-bytes png width)
         :with pixels-per-byte = (/ 8 bit-depth)
         :with channels = (get-image-channels png)
@@ -395,13 +397,14 @@
     (flip png data)))
 
 (defun decode (png)
-  (let ((image-data (data png))
-        (width (width png))
-        (height (height png))
-        (bit-depth (bit-depth png))
-        (transparency (transparency png)))
+  (let* ((state (state png))
+         (image-data (data png))
+         (width (width png))
+         (height (height png))
+         (bit-depth (bit-depth png))
+         (transparency (state-transparency state)))
     (declare (ub8a1d image-data))
-    (if (eq (interlace-method png) :null)
+    (if (zerop (state-interlace-method state))
         (unfilter png image-data width height 0)
         (setf image-data (deinterlace-adam7 png image-data)))
     (assert (and (typep bit-depth 'ub8)
