@@ -13,11 +13,12 @@ What makes pngload different than png-read?
 ### Speed
 
 pngload is optimized for speed and portability across many different Common Lisp
-implementation and architecture combinations. On 64-bit SBCL it is roughly 3x
-faster than the png-read library when decoding a large 4096x4096 RGBA image:
+implementation and architecture combinations. On 64-bit SBCL it is more than 3x
+faster than the png-read library when decoding a particular large 4096x4096 RGBA
+image:
 
-- pngload: 1.039s
-- png-read: 2.986s
+- pngload: 0.901s
+- png-read: 3.058s
 
 New in version 2.0: To overcome some performance bottlenecks, we wrote [our
 own](https://github.com/3b/3bz) decompressor, as the alternatives were too slow
