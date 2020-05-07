@@ -33,7 +33,7 @@
 (define-chunk idat (png :buffer nil)
   (data)
   (if (state-decode-data (state png))
-      (progn
+      (when (plusp (chunk-length idat))
         (setf data (source-region (chunk-length idat)))
         (push data (data png)))
       (skip-bytes (chunk-length idat))))
