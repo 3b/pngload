@@ -160,8 +160,7 @@
 
 (defmethod get-metadata (png (key (eql :transparency)))
   (alexandria:when-let* ((chunk (first (find-chunks png :trns)))
-                         (data (chunk-data chunk))
-                         (palette (state-palette (state png))))
+                         (data (chunk-data chunk)))
     (ecase (color-type png)
       (:greyscale
        (chunk-data-trns-grey data))
@@ -170,12 +169,13 @@
                (chunk-data-trns-green data)
                (chunk-data-trns-blue data)))
       (:indexed-colour
-       (loop :for alpha :across (chunk-data-trns-alpha-values data)
-             :for i :from 0
-             :collect (cons (vector (aref palette i 0)
-                                    (aref palette i 1)
-                                    (aref palette i 2))
-                            alpha))))))
+       (let ((palette (state-palette (state png))))
+         (loop :for alpha :across (chunk-data-trns-alpha-values data)
+               :for i :from 0
+               :collect (cons (vector (aref palette i 0)
+                                      (aref palette i 1)
+                                      (aref palette i 2))
+                              alpha)))))))
 
 ;;; pHYS
 
