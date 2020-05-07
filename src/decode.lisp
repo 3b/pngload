@@ -352,7 +352,7 @@
                        (ub16a1d transparency))
          :for s :from (- (* width height (1- c)) (1- c)) :downto 0 :by (1- c)
          :for d :from (- (array-total-size data) c) :downto 0 :by c
-         :do (loop :for i :below (1- c)
+         :do (loop :for i :from (- c 2) :downto 0
                    :for k :across key
                    :for v = (%row-major-aref data (+ s i))
                    :do (setf (%row-major-aref data (+ d i)) v)
