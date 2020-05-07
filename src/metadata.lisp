@@ -9,7 +9,7 @@
 
 (defgeneric get-metadata (png key)
   (:method (png key)
-    (error "No metadata")))
+    (error "Unknown metadata ~s" key)))
 
 ;;; IHDR
 
