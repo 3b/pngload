@@ -353,7 +353,7 @@
          :for s :from (- (* width height (1- c)) (1- c)) :downto 0 :by (1- c)
          :for d :from (- (array-total-size data) c) :downto 0 :by c
          :do (loop :for i :from (- c 2) :downto 0
-                   :for k :across key
+                   :for k = (aref key i)
                    :for v = (%row-major-aref data (+ s i))
                    :do (setf (%row-major-aref data (+ d i)) v)
                    :count (= v k) :into matches

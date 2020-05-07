@@ -150,8 +150,8 @@
      (setf (state-transparency (state png)) grey))
     (:truecolour
      (setf red (ub16be)
-           blue (ub16be)
-           green (ub16be))
+           green (ub16be)
+           blue (ub16be))
      (setf (state-transparency (state png))
            (make-array 3 :element-type 'ub16
                          :initial-contents (list red green blue))))
