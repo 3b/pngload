@@ -238,9 +238,11 @@
   (unit-specifier pixel-width pixel-height)
   (setf unit-specifier (ub8)
         pixel-width (parse-float:parse-float
-                     (read-string :encoding :ascii :null-terminated-p t))
+                     (read-string :encoding :ascii :null-terminated-p t)
+                     :type 'double-float)
         pixel-height (parse-float:parse-float
-                      (read-string :encoding :ascii)))
+                      (read-string :encoding :ascii)
+                      :type 'double-float))
   ;; TODO: Add user getter functions (remove below line when done)
   (warn 'chunk-not-implemented :png png :chunk scal))
 
