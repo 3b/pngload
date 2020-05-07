@@ -228,7 +228,8 @@
 (defmacro copy/16 (png)
   (declare (ignore png))
   `(progn
-     (assert (zerop (mod (array-total-size image-data) 2)))
+     (assert (>= (array-total-size image-data)
+                 (* 2 (array-total-size data))))
      (loop :for d :below (array-total-size data)
            :for s :below (array-total-size image-data) :by 2
            :do (locally (declare (optimize speed (safety 0)))
