@@ -1,0 +1,143 @@
+name: CI
+on:
+  push:
+#    branches: [ master, tmp ]
+  pull_request:
+    branches: [ master ]
+env:
+  ql-pngload-test: -e '(handler-bind (#+asdf3.2(asdf:bad-SYSTEM-NAME (function MUFFLE-WARNING))) (handler-case (ql:quickload :pngload.test) (error (a) (format t "caught error ~s~%~a~%" a a) (uiop:quit 123))))'
+jobs:
+  test:
+    name: ${{ matrix.lisp }} on ${{ matrix.os }}
+    strategy:
+      matrix:
+        # sbcl32 and clisp32 don't work, clasp won't build on CI servers
+        lisp: [sbcl-bin,sbcl,ccl,ccl32,ecl,clisp,allegro,cmucl,abcl]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        exclude:
+          # msys or something doesn't work on windows runners?
+            - os: windows-latest
+              lisp: ecl
+            - os: windows-latest
+              lisp: sbcl
+          # some binaries don't install properly on windows?
+            - os: windows-latest
+              lisp: allegro
+            - os: windows-latest
+              lisp: cmucl
+            - os: windows-latest
+              lisp: abcl
+          # clisp doesn't build on windows runner
+            - os: windows-latest
+              lisp: clisp
+          # ccl and ccl32 never exit on win?
+            - os: windows-latest
+              lisp: ccl
+            - os: windows-latest
+              lisp: ccl32
+          # ccl doesn't seem to work on osx?
+            - os: macos-latest
+              lisp: ccl
+          # CFFI requires CLISP compiled with dynamic FFI support.
+            - os: macos-latest
+              lisp: clisp
+          # skip 32bit lisps on osx
+            - os: macos-latest
+              lisp: sbcl32
+            - os: macos-latest
+              lisp: ccl32
+            - os: macos-latest
+              lisp: clisp32
+            - os: macos-latest
+              lisp: allegro
+            - os: macos-latest
+              lisp: cmucl
+      fail-fast: false
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    # tell git not to convert line endings
+    - name: turn off git autocrlf
+      if: matrix.os == 'windows-latest'
+      run: git config --global core.autocrlf false
+
+    # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    # check out extra repos if not in QL, or version in ql is too old
+    - run: mkdir -p ~/lisp/
+
+    - name: 3bz from git
+      uses: actions/checkout@v2
+      with:
+        repository: 3b/3bz
+        path: ~/lisp/3bz
+
+    - name: zpb-exif from git
+      uses: actions/checkout@v2
+      with:
+        repository: 3b/zpb-exif
+        path: ~/lisp/zpb-exif
+
+    - name: cache .roswell
+      id: cache-dot-roswell
+      uses: actions/cache@v1
+      with:
+        path: ~/.roswell
+        key: ${{ runner.os }}-dot-roswell-${{ matrix.lisp }}-${{ hashFiles('**/*.asd') }}
+        restore-keys: |
+          ${{ runner.os }}-dot-roswell-${{ matrix.lisp }}-
+          ${{ runner.os }}-dot-roswell-
+
+    - name: install roswell
+      # always run install, since it does some global installs and setup that isn't cached
+      env:
+       LISP: ${{ matrix.lisp }}
+      #run: curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh
+      run: curl -L https://raw.githubusercontent.com/3b/roswell/master/scripts/install-for-ci.sh | sh
+
+    - name: run lisp
+      continue-on-error: true
+      shell: bash
+      run: |
+        ros -e '(format t "~a:~a on ~a~%...~%~%" (lisp-implementation-type) (lisp-implementation-version) (machine-type))'
+        ros -e '(format t " fixnum bits:~a~%" (integer-length most-positive-fixnum))'
+        ros -e "(ql:quickload 'trivial-features)" -e '(format t "features = ~s~%" *features*)'
+
+    - name: update ql dist if we have one cached
+      shell: bash
+      run: ros -e "(ql:update-all-dists :prompt nil)"
+
+    - name: clear fasl cache
+      shell: bash
+      run: |
+        rm -rf ~/.cache/common-lisp/
+        mkdir -p ~/.cache/common-lisp/
+
+    - name: cmucl hax
+      # cmucl gets some build errors on deps we don't actually need, so try a few extra loads
+      continue-on-error: true
+      if: matrix.lisp == 'cmucl'
+      shell: bash
+      run: |
+        #ros -s pngload.test
+        #ros -s pngload.test
+        ros -e '(ql:quickload :pngload.test)'
+        ros -e '(ql:quickload :pngload.test)'
+
+    - name: load code from clean fasl cache and run tests
+      shell: bash
+      run: |
+        ros ${{ env.ql-pngload-test }} -e '(pngload.test:run-tests-for-ci)'
+
+    - name: load code from fasls and run tests
+      shell: bash
+      run: |
+        ros ${{ env.ql-pngload-test }} -e '(pngload.test:run-tests-for-ci)'
+
+    - name: test read times
+      shell: bash
+      run: |
+        curl http://3bb.cc/tmp/fft.png -o fft.png
+        ros ${{ env.ql-pngload-test }} -e '(pngload.test:test-read-times "fft.png" :count 10)'

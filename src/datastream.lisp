@@ -1,26 +1,26 @@
 (in-package #:pngload)
 
-(defclass datastream ()
-  ((signature :reader signature)
-   (chunks :reader chunks)))
+(defstruct datastream
+  signature
+  chunks)
 
-(defun parse-datastream ()
-  (let ((datastream (make-instance 'datastream)))
-    (with-slots (signature chunks) datastream
-      (setf signature (parse-signature)
-            chunks (parse-all-chunks)))
-    (when *decode-data*
-      (decode))
+(defun parse-datastream (png)
+  (let ((datastream (make-datastream)))
+    (setf (datastream-signature datastream) (parse-signature png)
+          (datastream-chunks datastream) (parse-all-chunks png))
+    (when (state-decode-data (state png))
+      (decode png))
     datastream))
 
-(defun parse-signature ()
-  (let ((signature (parsley:read-bytes 8)))
-    (if (parsley:octets= signature '(137 80 78 71 13 10 26 10))
-        signature
-        (error 'invalid-png-stream))))
+(defun parse-signature (png)
+  (with-source ((state-source (state png)))
+    (let ((signature (loop :repeat 8 :collect (ub8))))
+      (if (equalp signature '(137 80 78 71 13 10 26 10))
+          signature
+          (error 'invalid-png-stream :png png)))))
 
-(defun parse-all-chunks ()
-  (loop :for chunk = (parse-chunk)
+(defun parse-all-chunks (png)
+  (loop :for chunk = (parse-chunk png)
         :collect chunk
-        :when (eq (chunk-name chunk) :iend)
+        :when (= (chunk-type chunk) #x49454e44)
           :do (loop-finish)))
