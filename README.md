@@ -264,6 +264,6 @@ property lists.
 
 ## License
 
-Copyright © 2017-2018 [Michael Fiano](mailto:mail@michaelfiano.com).
+Copyright © 2017-2018 Michael Fiano <mail@mfiano.net>.
 
 Licensed under the MIT License.
