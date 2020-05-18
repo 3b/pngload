@@ -228,7 +228,9 @@
 (defmacro copy/16 (png)
   (declare (ignore png))
   `(progn
-     (assert (zerop (mod (array-total-size image-data) 2)))
+     (assert (or (>= (array-total-size image-data)
+                     (* 2 (array-total-size data)))
+                 (zerop (mod (array-total-size image-data) 2))))
      (loop :for d :below (array-total-size data)
            :for s :below (array-total-size image-data) :by 2
            :do (locally (declare (optimize speed (safety 0)))
@@ -352,8 +354,8 @@
                        (ub16a1d transparency))
          :for s :from (- (* width height (1- c)) (1- c)) :downto 0 :by (1- c)
          :for d :from (- (array-total-size data) c) :downto 0 :by c
-         :do (loop :for i :below (1- c)
-                   :for k :across key
+         :do (loop :for i :from (- c 2) :downto 0
+                   :for k = (aref key i)
                    :for v = (%row-major-aref data (+ s i))
                    :do (setf (%row-major-aref data (+ d i)) v)
                    :count (= v k) :into matches

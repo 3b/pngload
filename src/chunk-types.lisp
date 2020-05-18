@@ -33,7 +33,7 @@
 (define-chunk idat (png :buffer nil)
   (data)
   (if (state-decode-data (state png))
-      (progn
+      (when (plusp (chunk-length idat))
         (setf data (source-region (chunk-length idat)))
         (push data (data png)))
       (skip-bytes (chunk-length idat))))
@@ -150,8 +150,8 @@
      (setf (state-transparency (state png)) grey))
     (:truecolour
      (setf red (ub16be)
-           blue (ub16be)
-           green (ub16be))
+           green (ub16be)
+           blue (ub16be))
      (setf (state-transparency (state png))
            (make-array 3 :element-type 'ub16
                          :initial-contents (list red green blue))))
@@ -238,9 +238,11 @@
   (unit-specifier pixel-width pixel-height)
   (setf unit-specifier (ub8)
         pixel-width (parse-float:parse-float
-                     (read-string :encoding :ascii :null-terminated-p t))
+                     (read-string :encoding :ascii :null-terminated-p t)
+                     :type 'double-float)
         pixel-height (parse-float:parse-float
-                      (read-string :encoding :ascii)))
+                      (read-string :encoding :ascii)
+                      :type 'double-float))
   ;; TODO: Add user getter functions (remove below line when done)
   (warn 'chunk-not-implemented :png png :chunk scal))
 
@@ -268,7 +270,8 @@
 
 (define-chunk exif (png)
   (data)
-  ;; TODO: Parse this chunk (remove below 2 lines when done)
+  ;; TODO: Parse this chunk (remove below line when done)
+  (skip-bytes (chunk-length unknown))
   #++(setf data (alexandria:alist-plist
                  (zpb-exif:exif-alist
                   (zpb-exif:parse-exif-octets (read-bytes (chunk-offset)))
