@@ -30,14 +30,6 @@ jobs:
           # clisp doesn't build on windows runner
             - os: windows-latest
               lisp: clisp
-          # ccl and ccl32 never exit on win?
-            - os: windows-latest
-              lisp: ccl
-            - os: windows-latest
-              lisp: ccl32
-          # ccl doesn't seem to work on osx?
-            - os: macos-latest
-              lisp: ccl
           # CFFI requires CLISP compiled with dynamic FFI support.
             - os: macos-latest
               lisp: clisp

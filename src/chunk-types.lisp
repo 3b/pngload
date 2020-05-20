@@ -271,7 +271,7 @@
 (define-chunk exif (png)
   (data)
   ;; TODO: Parse this chunk (remove below line when done)
-  (skip-bytes (chunk-length unknown))
+  (skip-bytes (chunk-length exif))
   #++(setf data (alexandria:alist-plist
                  (zpb-exif:exif-alist
                   (zpb-exif:parse-exif-octets (read-bytes (chunk-offset)))
