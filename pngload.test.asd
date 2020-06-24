@@ -1,11 +1,11 @@
 (asdf:defsystem #:pngload.test
   :description "Tests for pngload."
-  :author ("Michael Fiano <mail@michaelfiano.com>"
+  :author ("Michael Fiano <mail@mfiano.net>"
            "Bart Botta <00003b@gmail.com>")
   :license "MIT"
-  :homepage "https://github.com/HackerTheory/pngload"
-  :bug-tracker "https://github.com/HackerTheory/pngload/issues"
-  :source-control (:git "https://github.com/HackerTheory/pngload.git")
+  :homepage "https://github.com/bufferswap/pngload"
+  :bug-tracker "https://github.com/bufferswap/pngload/issues"
+  :source-control (:git "https://github.com/bufferswap/pngload")
   :encoding :utf-8
   :depends-on (#:alexandria
                #:local-time
