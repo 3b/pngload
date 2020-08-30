@@ -265,7 +265,7 @@
                (,p (pos ,source))
                ,@(when end `((,e1 (end ,source))))
                (,e ,(or end `(end ,source))))
-           (declare (type file-stream ,v)
+           (declare (type stream ,v)
                     (type fixnum ,p))
            (labels ((ub8 ()
                       (when ,e (assert (< ,p ,e)))
