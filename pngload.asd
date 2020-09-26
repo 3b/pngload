@@ -1,11 +1,11 @@
 (asdf:defsystem #:pngload
   :description "A reader for the PNG image format."
-  :author ("Michael Fiano <mail@michaelfiano.com>"
+  :author ("Michael Fiano <mail@mfiano.net>"
            "Bart Botta <00003b@gmail.com>")
   :license "MIT"
-  :homepage "https://github.com/HackerTheory/pngload"
-  :source-control (:git "https://github.com/HackerTheory/pngload.git")
-  :bug-tracker "https://github.com/HackerTheory/pngload/issues"
+  :homepage "https://github.com/bufferswap/pngload"
+  :source-control (:git "https://github.com/bufferswap/pngload")
+  :bug-tracker "https://github.com/bufferswap/pngload/issues"
   :encoding :utf-8
   :depends-on (#:3bz
                #:alexandria

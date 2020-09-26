@@ -265,7 +265,7 @@
                (,p (pos ,source))
                ,@(when end `((,e1 (end ,source))))
                (,e ,(or end `(end ,source))))
-           (declare (type file-stream ,v)
+           (declare (type stream ,v)
                     (type fixnum ,p))
            (labels ((ub8 ()
                       (when ,e (assert (< ,p ,e)))
@@ -305,7 +305,7 @@
                     (read-string (&key (bytes (- ,e ,p))
                                     encoding null-terminated-p
                                     zlib)
-                      (let ((s (make-array bytes :element-type 'yub8)))
+                      (let ((s (make-array bytes :element-type 'ub8)))
                         (loop :for i :below bytes
                               :for b = (ub8)
                               :do (setf (aref s i) b)
