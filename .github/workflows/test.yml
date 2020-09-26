@@ -69,12 +69,12 @@ jobs:
       run: |
         which gcc
         gcc --version
-        mkdir -p ~/bin
-        export PATH=~/bin/:$PATH
-        echo -e "#!bash\n/mingw64/bin/gcc -Wl,--default-image-base-low $@" > ~/bin/gcc
-        echo "::add-path::~/bin/"
-        which gcc
-        gcc --version
+        #mkdir -p ~/bin
+        #export PATH=~/bin/:$PATH
+        #echo -e "#!bash\n/mingw64/bin/gcc -Wl,--default-image-base-low $@" > ~/bin/gcc
+        #echo "::add-path::~/bin/"
+        #which gcc
+        #gcc --version
         # see what's installed
         pacman -Q
         # install something from msys/mingw
