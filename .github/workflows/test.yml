@@ -64,12 +64,13 @@ jobs:
         echo "::set-env name=CC::gcc -Wl,--default-image-base-low"
         echo "::add-path::C:\msys64\usr\bin\"
         echo "::add-path::$HOME/.roswell/bin"
-
+        echo -e "#!bash\ngcc -Wl,--default-image-base-low $@" > $HOME/.roswell/bin/gcc
     - name: Install extra packages on windows
       if: matrix.os == 'windows-latest'
       run: |
         # see what's installed
         pacman -Q
+        which gcc
         gcc --version
         # install something from msys/mingw
         # pacman -S --noconfirm mingw64/mingw-w64-x86_64-zlib
