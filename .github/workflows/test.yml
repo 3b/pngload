@@ -77,7 +77,7 @@ jobs:
         # see what's installed
         pacman -Q
         # install something from msys/mingw
-        # pacman -S --noconfirm mingw64/mingw-w64-x86_64-zlib
+        pacman -S --noconfirm msys/git
 
     # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
