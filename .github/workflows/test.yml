@@ -64,10 +64,13 @@ jobs:
         echo "::set-env name=CC::gcc -Wl,--default-image-base-low"
         echo "::add-path::C:\msys64\usr\bin\"
         echo "::add-path::$HOME/.roswell/bin"
-        echo -e "#!bash\ngcc -Wl,--default-image-base-low $@" > $HOME/.roswell/bin/gcc
     - name: Install extra packages on windows
       if: matrix.os == 'windows-latest'
       run: |
+        mkdir -p ~/bin
+        export PATH=~/bin/:$PATH
+        echo -e "#!bash\ngcc -Wl,--default-image-base-low $@" > ~/bin/gcc
+        echo "::add-path::~/bin/"
         # see what's installed
         pacman -Q
         which gcc
