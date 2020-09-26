@@ -1,6 +1,7 @@
 (in-package #:pngload)
 
-(defun load-file (path &key (decode t) flatten flip-y static-vector)
+(defun load-file (path &key (decode t) flatten flip-y static-vector
+                         unknown-chunk-warnings)
   "Load the PNG file located at the given filesystem PATH. The following options
   are supported:
 

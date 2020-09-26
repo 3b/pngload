@@ -1,6 +1,7 @@
 (in-package #:pngload)
 
-(defun load-stream (stream &key (decode t) flatten flip-y static-vector)
+(defun load-stream (stream &key (decode t) flatten flip-y static-vector
+                             unknown-chunk-warnings)
   "load the given PNG datastream from STREAM. The following options are
   supported:
 
@@ -19,6 +20,7 @@ See LOAD-FILE if you want to load a PNG datastream from a file on disk."
                             :flatten flatten
                             :flip-y flip-y
                             :use-static-vector static-vector
+                            :unknown-chunk-warnings unknown-chunk-warnings
                             :source source))
          (png (make-png :state state)))
     (setf (parse-tree png) (parse-datastream png))
@@ -103,7 +105,8 @@ See LOAD-FILE"
            (,state (make-state :decode-data decode
                                :flatten flatten
                                :flip-y flip-y
-                               :use-static-vector static-vector)))
+                               :use-static-vector static-vector
+                               :unknown-chunk-warnings unknown-chunk-warnings)))
        (unless (uiop:file-exists-p ,path)
          (error 'file-not-found :png ,png))
        (with-open-file (,in ,path)

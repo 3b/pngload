@@ -281,4 +281,5 @@
 
 (define-chunk unknown (png) ()
   (skip-bytes (chunk-length unknown))
-  (warn 'unknown-chunk-detected :png png :chunk unknown))
+  (when (state-unknown-chunk-warnings (state png))
+    (warn 'unknown-chunk-detected :png png :chunk unknown)))

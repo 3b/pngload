@@ -17,6 +17,7 @@
   flatten
   flip-y
   use-static-vector
+  unknown-chunk-warnings
   source
   mmap-pointer
   interlace-method
