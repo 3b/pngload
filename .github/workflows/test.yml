@@ -124,7 +124,7 @@ jobs:
         cd /c/Users/runneradmin/.roswell/src/
         git clone https://github.com/sbcl/sbcl.git
         cd sbcl
-#        cd "/c/Users/runneradmin/.roswell/src/sbcl-2.0.8";
+        # cd "/c/Users/runneradmin/.roswell/src/sbcl-2.0.8";
         ./make.sh '--xc-host=C:/msys64/usr/local/bin/ros.exe -L sbcl-bin without-roswell=t run -- --no-userinit --no-sysinit' '--prefix=/c/Users/runneradmin/.roswell/impls/x86-64/windows/sbcl/2.0.8'
         ros use sbcl/2.0.8
 
