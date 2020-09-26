@@ -95,7 +95,6 @@ jobs:
           ${{ runner.os }}-dot-roswell-
 
     - name: install roswell
-      continue-on-error: true
       # always run install, since it does some global installs and setup that isn't cached
       env:
        LISP: ${{ matrix.lisp }}
