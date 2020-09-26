@@ -69,6 +69,7 @@ jobs:
       run: |
         # see what's installed
         pacman -Q
+        gcc --version
         # install something from msys/mingw
         # pacman -S --noconfirm mingw64/mingw-w64-x86_64-zlib
 
