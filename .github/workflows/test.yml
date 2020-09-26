@@ -67,14 +67,16 @@ jobs:
     - name: Install extra packages on windows
       if: matrix.os == 'windows-latest'
       run: |
+        which gcc
+        gcc --version
         mkdir -p ~/bin
         export PATH=~/bin/:$PATH
         echo -e "#!bash\n/mingw64/bin/gcc -Wl,--default-image-base-low $@" > ~/bin/gcc
         echo "::add-path::~/bin/"
-        # see what's installed
-        pacman -Q
         which gcc
         gcc --version
+        # see what's installed
+        pacman -Q
         # install something from msys/mingw
         # pacman -S --noconfirm mingw64/mingw-w64-x86_64-zlib
 
