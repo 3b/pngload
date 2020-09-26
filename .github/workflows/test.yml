@@ -10,8 +10,8 @@ jobs:
     strategy:
       matrix:
         # sbcl32 and clisp32 don't work, clasp won't build on CI servers
-        lisp: [sbcl-bin,sbcl,ccl,ccl32,ecl,clisp,allegro,cmucl,abcl]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        lisp: [sbcl-bin,sbcl]
+        os: [windows-latest]
         exclude:
           # some implementations don't install/build properly on windows
             - os: windows-latest
@@ -64,6 +64,13 @@ jobs:
         echo "::add-path::C:\msys64\usr\bin\"
         echo "::add-path::$HOME/.roswell/bin"
 
+    - name: Install extra packages on windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        # see what's installed
+        pacman -Q
+        # install something from msys/mingw
+        # pacman -S --noconfirm mingw64/mingw-w64-x86_64-zlib
 
     # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
@@ -96,11 +103,17 @@ jobs:
 
     - name: install roswell
       # always run install, since it does some global installs and setup that isn't cached
+      continue-on-error: true
       env:
        LISP: ${{ matrix.lisp }}
       #run: curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh -x
       run: curl -L https://raw.githubusercontent.com/3b/roswell/ci/scripts/install-for-ci.sh | sh -x
         
+    - name: manual sbcl build
+      run: |
+        cd "/c/Users/runneradmin/.roswell/src/sbcl-2.0.8";
+        ./make.sh '--xc-host=C:/msys64/usr/local/bin/ros.exe -L sbcl-bin without-roswell=t run -- --no-userinit --no-sysinit' '--prefix=/c/Users/runneradmin/.roswell/impls/x86-64/windows/sbcl/2.0.8'
+
     - name: run lisp
       continue-on-error: true
       run: |
