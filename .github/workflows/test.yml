@@ -91,15 +91,15 @@ jobs:
         repository: 3b/skippy
         path: ~/lisp/skippy
 
-    - name: cache .roswell
-      id: cache-dot-roswell
-      uses: actions/cache@v1
-      with:
-        path: ~/.roswell
-        key: ${{ runner.os }}-dot-roswell-${{ matrix.lisp }}-${{ hashFiles('**/*.asd') }}
-        restore-keys: |
-          ${{ runner.os }}-dot-roswell-${{ matrix.lisp }}-
-          ${{ runner.os }}-dot-roswell-
+#    - name: cache .roswell
+#      id: cache-dot-roswell
+#      uses: actions/cache@v1
+#      with:
+#        path: ~/.roswell
+#        key: ${{ runner.os }}-dot-roswell-${{ matrix.lisp }}-${{ hashFiles('**/*.asd') }}
+#        restore-keys: |
+#          ${{ runner.os }}-dot-roswell-${{ matrix.lisp }}-
+#          ${{ runner.os }}-dot-roswell-
 
     - name: install roswell
       # always run install, since it does some global installs and setup that isn't cached
@@ -110,6 +110,7 @@ jobs:
       run: curl -L https://raw.githubusercontent.com/3b/roswell/ci/scripts/install-for-ci.sh | sh -x
         
     - name: manual sbcl build
+      if: matrix.lisp == 'sbcl'
       run: |
         cd "/c/Users/runneradmin/.roswell/src/sbcl-2.0.8";
         ./make.sh '--xc-host=C:/msys64/usr/local/bin/ros.exe -L sbcl-bin without-roswell=t run -- --no-userinit --no-sysinit' '--prefix=/c/Users/runneradmin/.roswell/impls/x86-64/windows/sbcl/2.0.8'
