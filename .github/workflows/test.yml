@@ -69,7 +69,7 @@ jobs:
       run: |
         mkdir -p ~/bin
         export PATH=~/bin/:$PATH
-        echo -e "#!bash\ngcc -Wl,--default-image-base-low $@" > ~/bin/gcc
+        echo -e "#!bash\n/mingw64/bin/gcc -Wl,--default-image-base-low $@" > ~/bin/gcc
         echo "::add-path::~/bin/"
         # see what's installed
         pacman -Q
