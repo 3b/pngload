@@ -11,7 +11,7 @@ jobs:
       matrix:
         # sbcl32 and clisp32 don't work, clasp won't build on CI servers
         lisp: [sbcl-bin,sbcl/git]
-        os: [windows-latest]
+        os: [windows-latest,ubuntu-latest]
         exclude:
           # some implementations don't install/build properly on windows
             - os: windows-latest
@@ -50,7 +50,7 @@ jobs:
     defaults:
       run:
         # specify default shell explicitly to get msys instead of git-bash on windows
-        shell: bash --login -eo pipefail "{0}"
+        shell: ${{ matrix.os=='windows.latest'?'msys2 {0}':'bash' }}
 
     steps:
     - name: windows specific settings
