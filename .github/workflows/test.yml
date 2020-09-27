@@ -57,7 +57,7 @@ jobs:
     - uses: msys2/setup-msys2@v2
       if: matrix.os == 'windows-latest'
       with:
-        path-type: inherit
+        path-type: minimal # inherit
         msystem: MINGW64
         # set these to true if we want to install things from pacman
         release: true
@@ -68,7 +68,7 @@ jobs:
     - name: tmp
       run: |
         echo path = $PATH
-        echo home = $HOME = ${{ env.HOME }}
+        echo home = $HOME = ${{ env.HOME }} = ${{ env.home }} = ${{ env.test.HOME }} = ${{ env.test.home }} 
         
     - name: windows specific settings
       if: matrix.os == 'windows-latest'
