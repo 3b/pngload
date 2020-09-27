@@ -65,7 +65,7 @@ jobs:
     - uses: msys2/setup-msys2@v2
       if: matrix.os == 'windows-latest'
       with:
-        path-type: inherit
+        #path-type: inherit
         msystem: MINGW64
         # set these to true if we want to install things from pacman
         release: true
