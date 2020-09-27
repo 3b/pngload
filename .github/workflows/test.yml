@@ -57,18 +57,13 @@ jobs:
     - uses: msys2/setup-msys2@v2
       if: matrix.os == 'windows-latest'
       with:
-        path-type: minimal # inherit
+        path-type: inherit
         msystem: MINGW64
         # set these to true if we want to install things from pacman
         release: true
         update: true
         # list all packages we want installed if using release&update true
-        install: 'git base-devel unzip mingw-w64-x86_64-gcc mingw64/mingw-w64-x86_64-zlib ${{ env.home }} x ${{ github.action_path  }} y ${{ env.test.home }} z ${{ env[''HOME''] }} '
-
-    - name: tmp
-      run: |
-        echo path = $PATH
-        echo home = $HOME = ${{ github.action_path }} = ${{ github.workspace }} = ${{ env['HOME'] }} = ${{ env.test['HOME'] }} 
+        install: 'git base-devel unzip mingw-w64-x86_64-gcc mingw64/mingw-w64-x86_64-zlib'
         
     - name: windows specific settings
       if: matrix.os == 'windows-latest'
@@ -78,7 +73,7 @@ jobs:
         echo "::add-path::$HOME/.roswell/bin"
         echo "::set-env name=MSYSCON::defterm"
         echo path = $PATH
-        echo home = $HOME = ${{ env.HOME }} = ${{ env.home }} = ${{ env.test.HOME }} = ${{ env.test.home }} 
+        echo home = $HOME
 
     - name: Install extra packages on windows
       if: matrix.os == 'windows-latest'
@@ -96,8 +91,6 @@ jobs:
         #gcc --version
         # see what's installed
         pacman -Q
-        # install something from msys/mingw
-        #pacman -S --noconfirm msys/git
 
     # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
@@ -135,17 +128,6 @@ jobs:
       #run: curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh -x
       run: curl -L https://raw.githubusercontent.com/3b/roswell/ci/scripts/install-for-ci.sh | sh -x
         
-#    - name: manual sbcl build
-#      if: matrix.lisp == 'sbcl'
-#      run: |
-#        mkdir -p /c/Users/runneradmin/.roswell/src/
-#        cd /c/Users/runneradmin/.roswell/src/
-#        git clone https://github.com/sbcl/sbcl.git
-#        cd sbcl
-#        # cd "/c/Users/runneradmin/.roswell/src/sbcl-2.0.8";
-#        ./make.sh '--xc-host=C:/msys64/usr/local/bin/ros.exe -L sbcl-bin without-roswell=t run -- --no-userinit --no-sysinit' '--prefix=/c/Users/runneradmin/.roswell/impls/x86-64/windows/sbcl/2.0.8'
-#        ros use sbcl/2.0.8
-
     - name: run lisp
       continue-on-error: true
       run: |
@@ -164,6 +146,9 @@ jobs:
     - name: clear fasl cache
       run: |
         echo $PATH
+        echo $HOME
+        echo $GITHUB_WORKSPACE
+        echo $GITHUB_HOME
         rm -rf ~/.cache/common-lisp/
         mkdir -p ~/.cache/common-lisp/
         
