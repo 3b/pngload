@@ -122,7 +122,6 @@ jobs:
 
     - name: install roswell
       # always run install, since it does some global installs and setup that isn't cached
-      continue-on-error: true
       env:
        LISP: ${{ matrix.lisp }}
       #run: curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh -x
