@@ -59,11 +59,19 @@ jobs:
       shell: pwsh
       run: |
         git config --global core.autocrlf false
-        echo "::set-env name=MSYSTEM::MINGW64"
-        echo "::set-env name=MSYSCON::defterm"
-        echo "::set-env name=MSYS2_PATH_TYPE::inherit"
-        echo "::add-path::C:\msys64\usr\bin\"
         echo "::add-path::$HOME/.roswell/bin"
+
+
+    - uses: msys2/setup-msys2@v2
+      with:
+        path-type: inherit
+        msystem: MINGW64
+        # set these to true if we want to install things from pacman
+        release: false
+        update: false
+        # list all packages we want installed if using release&update true
+        # install: 'git base-devel  mingw64/mingw-w64-x86_64-zlib'
+
     - name: Install extra packages on windows
       if: matrix.os == 'windows-latest'
       run: |
