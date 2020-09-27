@@ -77,6 +77,8 @@ jobs:
         git config --global core.autocrlf false
         echo "::add-path::$HOME/.roswell/bin"
         echo "::set-env name=MSYSCON::defterm"
+        echo path = $PATH
+        echo home = $HOME = ${{ env.HOME }} = ${{ env.home }} = ${{ env.test.HOME }} = ${{ env.test.home }} 
 
     - name: Install extra packages on windows
       if: matrix.os == 'windows-latest'
