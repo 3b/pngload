@@ -50,7 +50,7 @@ jobs:
     defaults:
       run:
         # specify default shell explicitly to get msys instead of git-bash on windows
-        shell: ${{ matrix.os=='windows.latest'?'msys2 {0}':'bash' }}
+        shell: ${{ [ 'bash', 'msys2 {0}' ] [ matrix.os == 'windows.latest' ] }}
 
     steps:
     - name: windows specific settings
