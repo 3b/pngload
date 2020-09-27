@@ -68,7 +68,7 @@ jobs:
     - name: tmp
       run: |
         echo path = $PATH
-        echo home = $HOME = ${{ env.HOME }} = ${{ env.home }} = ${{ env.test.HOME }} = ${{ env.test.home }} 
+        echo home = $HOME = ${{ github.action_path }} = ${{ github.workspace }} = ${{ env['HOME'] }} = ${{ env.test['HOME'] }} 
         
     - name: windows specific settings
       if: matrix.os == 'windows-latest'
