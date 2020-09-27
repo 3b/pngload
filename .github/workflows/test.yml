@@ -80,6 +80,7 @@ jobs:
         #echo os ${{ matrix.od }} ${{ matrix.os == 'windows-latest' }} @ ${{ 1 == ( matrix.os == 'windows-latest' ) }}
         which gcc
         gcc --version
+        echo $PATH
         #mkdir -p ~/bin
         #export PATH=~/bin/:$PATH
         #echo -e "#!bash\n/mingw64/bin/gcc -Wl,--default-image-base-low $@" > ~/bin/gcc
@@ -155,6 +156,7 @@ jobs:
 
     - name: clear fasl cache
       run: |
+        echo $PATH
         rm -rf ~/.cache/common-lisp/
         mkdir -p ~/.cache/common-lisp/
         
