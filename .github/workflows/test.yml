@@ -71,7 +71,7 @@ jobs:
         release: true
         update: true
         # list all packages we want installed if using release&update true
-        install: 'git base-devel  mingw64/mingw-w64-x86_64-zlib'
+        #install: 'git base-devel  mingw64/mingw-w64-x86_64-zlib'
 
     - name: Install extra packages on windows
       if: matrix.os == 'windows-latest'
