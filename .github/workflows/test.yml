@@ -54,6 +54,17 @@ jobs:
         shell: ${{ fromJSON('[ "bash", "msys2 {0}" ]') [ matrix.os == 'windows-latest' ] }}
 
     steps:
+    - uses: msys2/setup-msys2@v2
+      if: matrix.os == 'windows-latest'
+      with:
+        path-type: inherit
+        msystem: MINGW64
+        # set these to true if we want to install things from pacman
+        release: true
+        update: true
+        # list all packages we want installed if using release&update true
+        install: 'git base-devel unzip mingw-w64-x86_64-gcc mingw64/mingw-w64-x86_64-zlib'
+
     - name: tmp
       run: |
         echo path = $PATH
@@ -66,17 +77,6 @@ jobs:
         git config --global core.autocrlf false
         echo "::add-path::$HOME/.roswell/bin"
         echo "::set-env name=MSYSCON::defterm"
-
-    - uses: msys2/setup-msys2@v2
-      if: matrix.os == 'windows-latest'
-      with:
-        path-type: inherit
-        msystem: MINGW64
-        # set these to true if we want to install things from pacman
-        release: true
-        update: true
-        # list all packages we want installed if using release&update true
-        install: 'git base-devel unzip mingw-w64-x86_64-gcc mingw64/mingw-w64-x86_64-zlib'
 
     - name: Install extra packages on windows
       if: matrix.os == 'windows-latest'
