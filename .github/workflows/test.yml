@@ -68,16 +68,16 @@ jobs:
         path-type: inherit
         msystem: MINGW64
         # set these to true if we want to install things from pacman
-        release: false
-        update: false
+        release: true
+        update: true
         # list all packages we want installed if using release&update true
-        # install: 'git base-devel  mingw64/mingw-w64-x86_64-zlib'
+        install: 'git base-devel  mingw64/mingw-w64-x86_64-zlib'
 
     - name: Install extra packages on windows
       if: matrix.os == 'windows-latest'
       run: |
-        echo shell? ${{ fromJSON('[ "bash", "msys2 {0}" ]') [ matrix.os == 'windows-latest' ] }}
-        echo os ${{ matrix.od }} ${{ matrix.os == 'windows-latest' }} @ ${{ 1 == ( matrix.os == 'windows-latest' ) }}
+        #echo shell? ${{ fromJSON('[ "bash", "msys2 {0}" ]') [ matrix.os == 'windows-latest' ] }}
+        #echo os ${{ matrix.od }} ${{ matrix.os == 'windows-latest' }} @ ${{ 1 == ( matrix.os == 'windows-latest' ) }}
         which gcc
         gcc --version
         #mkdir -p ~/bin
@@ -89,7 +89,7 @@ jobs:
         # see what's installed
         pacman -Q
         # install something from msys/mingw
-        pacman -S --noconfirm msys/git
+        #pacman -S --noconfirm msys/git
 
     # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
