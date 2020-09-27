@@ -63,7 +63,7 @@ jobs:
         release: true
         update: true
         # list all packages we want installed if using release&update true
-        install: 'git base-devel unzip mingw-w64-x86_64-gcc mingw64/mingw-w64-x86_64-zlib ${{ env.home }} x ${{ HOME  }} y ${{ env.test.home }} z ${{ env[''HOME''] }} '
+        install: 'git base-devel unzip mingw-w64-x86_64-gcc mingw64/mingw-w64-x86_64-zlib ${{ env.home }} x ${{ github.action_path  }} y ${{ env.test.home }} z ${{ env[''HOME''] }} '
 
     - name: tmp
       run: |
