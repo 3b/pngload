@@ -76,6 +76,8 @@ jobs:
     - name: Install extra packages on windows
       if: matrix.os == 'windows-latest'
       run: |
+        echo shell? ${{ fromJSON('[ "bash", "msys2 {0}" ]') [ matrix.os == 'windows.latest' ] }}
+        echo os ${{ matrix.os == 'windows.latest' }} @ ${{ 0 + matrix.os == 'windows.latest' }}
         which gcc
         gcc --version
         #mkdir -p ~/bin
