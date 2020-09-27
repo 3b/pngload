@@ -60,7 +60,7 @@ jobs:
       run: |
         git config --global core.autocrlf false
         echo "::add-path::$HOME/.roswell/bin"
-
+        echo "::set-env name=MSYSCON::defterm"
 
     - uses: msys2/setup-msys2@v2
       if: matrix.os == 'windows-latest'
