@@ -4,8 +4,6 @@ on:
 #    branches: [ master, tmp ]
   pull_request:
     branches: [ master ]
-env:
-  ql-pngload-test: -e '(handler-bind (#+asdf3.2(asdf:bad-SYSTEM-NAME (function MUFFLE-WARNING))) (handler-case (ql:quickload :pngload.test) (error (a) (format t "caught error ~s~%~a~%" a a) (uiop:quit 123))))'
 jobs:
   test:
     name: ${{ matrix.lisp }} on ${{ matrix.os }}
@@ -15,24 +13,23 @@ jobs:
         lisp: [sbcl-bin,sbcl,ccl,ccl32,ecl,clisp,allegro,cmucl,abcl]
         os: [ubuntu-latest, macos-latest, windows-latest]
         exclude:
-          # msys or something doesn't work on windows runners?
-            - os: windows-latest
-              lisp: ecl
-            - os: windows-latest
-              lisp: sbcl
-          # some binaries don't install properly on windows?
+          # some implementations don't install/build properly on windows
             - os: windows-latest
               lisp: allegro
             - os: windows-latest
               lisp: cmucl
             - os: windows-latest
               lisp: abcl
-          # clisp doesn't build on windows runner
+            - os: windows-latest
+              lisp: ecl
             - os: windows-latest
               lisp: clisp
           # CFFI requires CLISP compiled with dynamic FFI support.
             - os: macos-latest
               lisp: clisp
+          # sbcl-bin is too old on macos
+            - os: macos-latest
+              lisp: sbcl-bin
           # skip 32bit lisps on osx
             - os: macos-latest
               lisp: sbcl32
@@ -44,15 +41,36 @@ jobs:
               lisp: allegro
             - os: macos-latest
               lisp: cmucl
+          # clisp doesn't build with current readline, do disable on linux too for now
+            - os: ubuntu-latest
+              lisp: clisp
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        # specify default shell explicitly to get msys instead of git-bash on windows
+        shell: ${{ fromJSON('[ "bash", "msys2 {0}" ]') [ matrix.os == 'windows-latest' ] }}
 
     steps:
-    # tell git not to convert line endings
-    - name: turn off git autocrlf
+    - uses: msys2/setup-msys2@v2
       if: matrix.os == 'windows-latest'
-      run: git config --global core.autocrlf false
+      with:
+        path-type: inherit
+        msystem: MINGW64
+        # set these to true if we want to install things from pacman
+        release: true
+        update: true
+        # list all packages we want installed if using release&update true
+        install: 'git base-devel unzip mingw-w64-x86_64-gcc mingw64/mingw-w64-x86_64-zlib'
+
+    - name: windows specific settings
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        git config --global core.autocrlf false
+        echo "::set-env name=MSYSCON::defterm"
+        echo "::add-path::$HOME/.roswell/bin"
 
     # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
@@ -60,17 +78,18 @@ jobs:
     # check out extra repos if not in QL, or version in ql is too old
     - run: mkdir -p ~/lisp/
 
-    - name: 3bz from git
+    - name: ci-utils fork
       uses: actions/checkout@v2
       with:
-        repository: 3b/3bz
-        path: ~/lisp/3bz
+        repository: 3b/ci-utils
+        ref: test2
+        path: ~/lisp/ci-utils
 
-    - name: zpb-exif from git
+    - name: skippy fork
       uses: actions/checkout@v2
       with:
-        repository: 3b/zpb-exif
-        path: ~/lisp/zpb-exif
+        repository: 3b/skippy
+        path: ~/lisp/skippy
 
     - name: cache .roswell
       id: cache-dot-roswell
@@ -83,53 +102,44 @@ jobs:
           ${{ runner.os }}-dot-roswell-
 
     - name: install roswell
+      continue-on-error: true
       # always run install, since it does some global installs and setup that isn't cached
       env:
        LISP: ${{ matrix.lisp }}
-      #run: curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh
-      run: curl -L https://raw.githubusercontent.com/3b/roswell/master/scripts/install-for-ci.sh | sh
-
-    - name: run lisp
+      #run: curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh -x
+      run: curl -L https://raw.githubusercontent.com/3b/roswell/ci/scripts/install-for-ci.sh | sh -x
+        
+    - name: print version/configuration info
       continue-on-error: true
-      shell: bash
       run: |
         ros -e '(format t "~a:~a on ~a~%...~%~%" (lisp-implementation-type) (lisp-implementation-version) (machine-type))'
         ros -e '(format t " fixnum bits:~a~%" (integer-length most-positive-fixnum))'
         ros -e "(ql:quickload 'trivial-features)" -e '(format t "features = ~s~%" *features*)'
+        which gcc
+        gcc --version
 
     - name: update ql dist if we have one cached
-      shell: bash
       run: ros -e "(ql:update-all-dists :prompt nil)"
 
+    - name: install ci-utils
+      run: |
+        ros install ci-utils
+        echo "::add-path::~/.roswell/bin"
+
     - name: clear fasl cache
-      shell: bash
       run: |
         rm -rf ~/.cache/common-lisp/
         mkdir -p ~/.cache/common-lisp/
-
-    - name: cmucl hax
-      # cmucl gets some build errors on deps we don't actually need, so try a few extra loads
-      continue-on-error: true
-      if: matrix.lisp == 'cmucl'
-      shell: bash
-      run: |
-        #ros -s pngload.test
-        #ros -s pngload.test
-        ros -e '(ql:quickload :pngload.test)'
-        ros -e '(ql:quickload :pngload.test)'
-
+        
     - name: load code from clean fasl cache and run tests
-      shell: bash
       run: |
-        ros ${{ env.ql-pngload-test }} -e '(pngload.test:run-tests-for-ci)'
+        run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
 
     - name: load code from fasls and run tests
-      shell: bash
       run: |
-        ros ${{ env.ql-pngload-test }} -e '(pngload.test:run-tests-for-ci)'
+        run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
 
     - name: test read times
-      shell: bash
       run: |
         curl http://3bb.cc/tmp/fft.png -o fft.png
-        ros ${{ env.ql-pngload-test }} -e '(pngload.test:test-read-times "fft.png" :count 10)'
+        run-test-forms -l pngload.test '(or (pngload.test:test-read-times "fft.png" :count 10) t)'
