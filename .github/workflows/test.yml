@@ -50,20 +50,27 @@ jobs:
     defaults:
       run:
         # specify default shell explicitly to get msys instead of git-bash on windows
-        shell: bash --login -eo pipefail "{0}"
+        shell: ${{ fromJSON('[ "bash", "msys2 {0}" ]') [ matrix.os == 'windows-latest' ] }}
 
     steps:
+    - uses: msys2/setup-msys2@v2
+      if: matrix.os == 'windows-latest'
+      with:
+        path-type: inherit
+        msystem: MINGW64
+        # set these to true if we want to install things from pacman
+        release: true
+        update: true
+        # list all packages we want installed if using release&update true
+        install: 'git base-devel unzip mingw-w64-x86_64-gcc mingw64/mingw-w64-x86_64-zlib'
+
     - name: windows specific settings
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
         git config --global core.autocrlf false
-        echo "::set-env name=MSYSTEM::MINGW64"
         echo "::set-env name=MSYSCON::defterm"
-        echo "::set-env name=MSYS2_PATH_TYPE::inherit"
-        echo "::add-path::C:\msys64\usr\bin\"
         echo "::add-path::$HOME/.roswell/bin"
-
 
     # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
@@ -102,12 +109,14 @@ jobs:
       #run: curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh -x
       run: curl -L https://raw.githubusercontent.com/3b/roswell/ci/scripts/install-for-ci.sh | sh -x
         
-    - name: run lisp
+    - name: print version/configuration info
       continue-on-error: true
       run: |
         ros -e '(format t "~a:~a on ~a~%...~%~%" (lisp-implementation-type) (lisp-implementation-version) (machine-type))'
         ros -e '(format t " fixnum bits:~a~%" (integer-length most-positive-fixnum))'
         ros -e "(ql:quickload 'trivial-features)" -e '(format t "features = ~s~%" *features*)'
+        which gcc
+        gcc --version
 
     - name: update ql dist if we have one cached
       run: ros -e "(ql:update-all-dists :prompt nil)"
