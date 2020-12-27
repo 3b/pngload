@@ -3,9 +3,9 @@
   :author ("Michael Fiano <mail@mfiano.net>"
            "Bart Botta <00003b@gmail.com>")
   :license "MIT"
-  :homepage "https://github.com/bufferswap/pngload"
-  :bug-tracker "https://github.com/bufferswap/pngload/issues"
-  :source-control (:git "https://github.com/bufferswap/pngload")
+  :homepage "https://git.mfiano.net/mfiano/pngload"
+  :bug-tracker "https://git.mfiano.net/mfiano/pngload/issues"
+  :source-control (:git "https://git.mfiano.net/mfiano/pngload")
   :encoding :utf-8
   :depends-on (#:alexandria
                #:local-time
