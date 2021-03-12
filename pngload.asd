@@ -4,8 +4,6 @@
            "Bart Botta <00003b@gmail.com>")
   :license "MIT"
   :homepage "https://git.mfiano.net/mfiano/pngload"
-  :source-control (:git "https://git.mfiano.net/mfiano/pngload")
-  :bug-tracker "https://git.mfiano.net/mfiano/pngload/issues"
   :encoding :utf-8
   :depends-on (#:3bz
                #:alexandria
