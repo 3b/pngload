@@ -69,8 +69,8 @@ jobs:
       shell: pwsh
       run: |
         git config --global core.autocrlf false
-        echo "::set-env name=MSYSCON::defterm"
-        echo "::add-path::$HOME/.roswell/bin"
+        echo "MSYSCON=defterm" >> $GITHUB_ENV
+        echo "$HOME/.roswell/bin" >> $GITHUB_PATH
 
     # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
@@ -124,7 +124,7 @@ jobs:
     - name: install ci-utils
       run: |
         ros install ci-utils
-        echo "::add-path::~/.roswell/bin"
+        echo "$HOME/.roswell/bin" >> $GITHUB_PATH
 
     - name: clear fasl cache
       run: |
