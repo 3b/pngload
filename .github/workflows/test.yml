@@ -69,8 +69,8 @@ jobs:
       shell: pwsh
       run: |
         git config --global core.autocrlf false
-        echo "::set-env name=MSYSCON::defterm"
-        echo "::add-path::$HOME/.roswell/bin"
+        echo "MSYSCON=defterm" >> $GITHUB_ENV
+        echo "$HOME/.roswell/bin" >> $GITHUB_PATH
 
     # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
@@ -106,12 +106,12 @@ jobs:
       # always run install, since it does some global installs and setup that isn't cached
       env:
        LISP: ${{ matrix.lisp }}
-      #run: curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh -x
-      run: curl -L https://raw.githubusercontent.com/3b/roswell/ci/scripts/install-for-ci.sh | sh -x
+      run: curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh -x
         
     - name: print version/configuration info
       continue-on-error: true
       run: |
+        echo "/usr/local/bin" >> $GITHUB_PATH
         ros -e '(format t "~a:~a on ~a~%...~%~%" (lisp-implementation-type) (lisp-implementation-version) (machine-type))'
         ros -e '(format t " fixnum bits:~a~%" (integer-length most-positive-fixnum))'
         ros -e "(ql:quickload 'trivial-features)" -e '(format t "features = ~s~%" *features*)'
@@ -119,12 +119,15 @@ jobs:
         gcc --version
 
     - name: update ql dist if we have one cached
-      run: ros -e "(ql:update-all-dists :prompt nil)"
+      run: |
+        echo "/usr/local/bin" >> $GITHUB_PATH
+        ros -e "(ql:update-all-dists :prompt nil)"
 
     - name: install ci-utils
       run: |
+        echo "/usr/local/bin" >> $GITHUB_PATH
         ros install ci-utils
-        echo "::add-path::~/.roswell/bin"
+        echo "$HOME/.roswell/bin" >> $GITHUB_PATH
 
     - name: clear fasl cache
       run: |
