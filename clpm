@@ -2,9 +2,7 @@
 
 (:api-version "0.3")
 
-(:source "quicklisp"
- :url "https://beta.quicklisp.org/dist/quicklisp.txt"
- :type :quicklisp)
+(:source "quicklisp" :url "https://beta.quicklisp.org/dist/quicklisp.txt" :type :quicklisp)
 
 (:asd "pngload.asd")
 (:asd "pngload.test.asd")
@@ -12,11 +10,11 @@
 (:github "3bz" :path "3b/3bz" :branch "master")
 (:gitlab "alexandria" :host "gitlab.common-lisp.net" :path "alexandria/alexandria" :branch "master")
 (:github "cffi" :path "cffi/cffi" :branch "master")
+(:github "local-time" :path "dlowe-net/local-time" :branch "master")
 (:github "mmap" :path "Shinmera/mmap" :branch "master")
+(:github "opticl" :path "slyrus/opticl" :branch "master")
 (:github "parse-float" :path "soemraws/parse-float" :branch "master" :systems ("parse-float"))
+(:github "png-read" :path "Ramarren/png-read" :branch "master")
 (:github "static-vectors" :path "sionescu/static-vectors" :branch "master")
 (:github "swap-bytes" :path "sionescu/swap-bytes" :branch "master")
 (:github "zpb-exif" :path "xach/zpb-exif" :branch "master")
-(:github "local-time" :path "dlowe-net/local-time" :branch "master")
-(:github "opticl" :path "slyrus/opticl" :branch "master")
-(:github "png-read" :path "Ramarren/png-read" :branch "master")
