@@ -111,7 +111,7 @@ jobs:
     - name: print version/configuration info
       continue-on-error: true
       run: |
-        echo "/usr/local" >> $GITHUB_PATH
+        echo "/usr/local/bin" >> $GITHUB_PATH
         ros -e '(format t "~a:~a on ~a~%...~%~%" (lisp-implementation-type) (lisp-implementation-version) (machine-type))'
         ros -e '(format t " fixnum bits:~a~%" (integer-length most-positive-fixnum))'
         ros -e "(ql:quickload 'trivial-features)" -e '(format t "features = ~s~%" *features*)'
@@ -120,12 +120,12 @@ jobs:
 
     - name: update ql dist if we have one cached
       run: |
-        echo "/usr/local" >> $GITHUB_PATH
+        echo "/usr/local/bin" >> $GITHUB_PATH
         ros -e "(ql:update-all-dists :prompt nil)"
 
     - name: install ci-utils
       run: |
-        echo "/usr/local" >> $GITHUB_PATH
+        echo "/usr/local/bin" >> $GITHUB_PATH
         ros install ci-utils
         echo "$HOME/.roswell/bin" >> $GITHUB_PATH
 
