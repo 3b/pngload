@@ -14,14 +14,14 @@ What makes pngload different than png-read?
 
 pngload is optimized for speed and portability across many different Common Lisp implementation and
 architecture combinations. On 64-bit SBCL it is more than 3x faster than the png-read library when
-decoding a particular large 4096x4096 RGBA image:
+decoding a particular large 4096x4096 RGBA image. Rough benchmarking in our particular environment
+at the time of writing shows:
 
 - pngload: 0.901s
 - png-read: 3.058s
 
-New in version 2.0: To overcome some performance bottlenecks, we wrote [our
-own](https://github.com/3b/3bz) decompressor, as the alternatives were too slow and not easily
-optimizable.
+To overcome some performance bottlenecks, we wrote [our own](https://github.com/3b/3bz)
+decompressor, as the alternatives were too slow and not easily optimizable.
 
 Also, we use the [mmap](https://github.com/Shinmera/mmap) library on operating systems that support
 it, with a fallback path when not supported.
@@ -53,7 +53,7 @@ automatically if you were already using opticl.
 
 ### Support for PNG extensions
 
-New in version 2.0, pngload supports [additional extension chunk
+pngload supports [additional extension chunk
 types](http://ftp-osl.osuosl.org/pub/libpng/documents/pngextensions.html), such as EXIF information.
 
 ### Optionally parse metadata only
@@ -129,11 +129,11 @@ automatically free the memory for you.
 
 ### Querying Metadata
 
-New in version 2.0, pngload has a unified API for querying different metadata that may be stored in
-a PNG datastream. The `get-metadata` method can be used to query any metadata available. It accepts
-a PNG object, which is returned by `load-file` or `load-stream` as per the above, as well as a key
-identifying the type of metadata you want to query. If a PNG datastream does not have the metadata
-requested, NIL will be returned. The following keys are recognized:
+pngload has a unified API for querying different metadata that may be stored in a PNG datastream.
+The `get-metadata` method can be used to query any metadata available. It accepts a PNG object,
+which is returned by `load-file` or `load-stream` as per the above, as well as a key identifying the
+type of metadata you want to query. If a PNG datastream does not have the metadata requested, NIL
+will be returned. The following keys are recognized:
 
 #### `:width`
 The image width in pixels. This is the same as `(width png)` and is only for convenience.
@@ -237,6 +237,6 @@ Arbitrary textual metadata stored in the PNG datastream. Returns a list of prope
 
 ## License
 
-Copyright © 2017-2018 Michael Fiano <mail@mfiano.net>.
+Copyright © 2017-2021 Michael Fiano <mail@mfiano.net>, Bart Botta <00003b@gmail.com>.
 
 Licensed under the MIT License.
