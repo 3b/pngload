@@ -6,6 +6,7 @@
    #:png
    #:load-file
    #:load-stream
+   #:load-vector
    #:width
    #:height
    #:bit-depth
