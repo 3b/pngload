@@ -71,10 +71,13 @@ jobs:
         git config --global core.autocrlf false
         echo "MSYSCON=defterm" >> $GITHUB_ENV
         echo "$HOME/.roswell/bin" >> $GITHUB_PATH
+        echo "$HOME/.roswell/lisp/quicklisp/bin" >> $GITHUB_PATH
         echo "$HOME/.roswell/bin"
 
     # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
+      with:
+        path: pngload
 
     # check out extra repos if not in QL, or version in ql is too old
     - run: mkdir -p ~/lisp/
@@ -119,6 +122,16 @@ jobs:
     - name: print version/configuration info
       continue-on-error: true
       run: |
+        echo "MSYSCON=$MSYSCON"
+        echo "LOCALAPPDATA=$LOCALAPPDATA"
+        ls $LOCALAPPDATA/config/common-lisp/source-registry.conf.d
+        echo "HOME=$HOME"
+        ls $HOME/.config/common-lisp/source-registry.conf.d
+        echo conf
+        cat $LOCALAPPDATA/config/common-lisp/source-registry.conf.d/ci.conf
+        cat $HOME/.config/common-lisp/source-registry.conf.d/ci.conf
+        echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+        echo `echo $GITHUB_WORKSPACE | sed -e 's/\\\\/\//g'`
         ros -e '(format t "~a:~a on ~a~%...~%~%" (lisp-implementation-type) (lisp-implementation-version) (machine-type))'
         ros -e '(format t " fixnum bits:~a~%" (integer-length most-positive-fixnum))'
         ros -e "(ql:quickload 'trivial-features)" -e '(format t "features = ~s~%" *features*)'
@@ -142,13 +155,13 @@ jobs:
         
     - name: load code from clean fasl cache and run tests
       run: |
-        ros exec run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
+        run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
 
     - name: load code from fasls and run tests
       run: |
-        ros exec run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
+        run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
 
     - name: test read times
       run: |
         curl http://3bb.cc/tmp/fft.png -o fft.png
-        ros exec run-test-forms -l pngload.test '(or (pngload.test:test-read-times "fft.png" :count 10) t)'
+        run-test-forms -l pngload.test '(or (pngload.test:test-read-times "fft.png" :count 10) t)'
