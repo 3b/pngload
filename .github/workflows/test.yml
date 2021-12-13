@@ -96,8 +96,8 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: slyrus/opticl
-        ref: 0eba652a06a6c022f0283c6db2833dd23cb62109
-        path: ~/lisp/opticl
+        ref: 0eba652a06a6c022f0283c6db2833dd23cb62190
+        path: ~/lisp/skippy
 
     - name: cache .roswell
       id: cache-dot-roswell
