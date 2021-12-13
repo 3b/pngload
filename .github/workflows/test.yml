@@ -10,23 +10,23 @@ jobs:
     strategy:
       matrix:
         # sbcl32 and clisp32 don't work, clasp won't build on CI servers
-        lisp: [sbcl-bin,sbcl,ccl-bin/1.12,ccl32,ecl,clisp,allegro,cmucl,abcl]
+        lisp: [sbcl-bin,sbcl,ccl-bin/1.12,ccl32/1.12,ecl,clisp,allegro,cmucl,abcl]
         os: [ubuntu-latest, macos-latest, windows-latest]
         exclude:
           # some implementations don't install/build properly on windows
-            - os: windows-latest
-              lisp: allegro
-            - os: windows-latest
-              lisp: cmucl
-            - os: windows-latest
-              lisp: abcl
-            - os: windows-latest
-              lisp: ecl
-            - os: windows-latest
-              lisp: clisp
-          # CFFI requires CLISP compiled with dynamic FFI support.
-            - os: macos-latest
-              lisp: clisp
+          #  - os: windows-latest
+          #    lisp: allegro
+          #  - os: windows-latest
+          #    lisp: cmucl
+          #  - os: windows-latest
+          #    lisp: abcl
+          #  - os: windows-latest
+          #    lisp: ecl
+          #  - os: windows-latest
+          #    lisp: clisp
+          ## CFFI requires CLISP compiled with dynamic FFI support.
+          #  - os: macos-latest
+          #    lisp: clisp
           # sbcl-bin is too old on macos
             - os: macos-latest
               lisp: sbcl-bin
@@ -42,8 +42,8 @@ jobs:
             - os: macos-latest
               lisp: cmucl
           # clisp doesn't build with current readline, do disable on linux too for now
-            - os: ubuntu-latest
-              lisp: clisp
+          #  - os: ubuntu-latest
+          #    lisp: clisp
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -66,6 +66,7 @@ jobs:
 
     - name: windows specific settings
       if: matrix.os == 'windows-latest'
+      # run with pwsh so we can see its HOME, though probably could use $USERPROFILE instead
       shell: pwsh
       run: |
         git config --global core.autocrlf false
