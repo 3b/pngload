@@ -118,15 +118,11 @@ jobs:
           ${{ runner.os }}-dot-roswell-
 
     - name: install roswell
-      continue-on-error: true
+      # continue-on-error: true
       # always run install, since it does some global installs and setup that isn't cached
       env:
        LISP: ${{ matrix.lisp }}
       run: curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh -x
-
-    # try to fail early when ros install failed
-    - name: ros use ${{ matrix.lisp }}
-      run: ros use ${{ matrix.lisp }}
 
     - name: print version/configuration info
       continue-on-error: true
