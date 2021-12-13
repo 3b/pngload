@@ -73,6 +73,10 @@ jobs:
         echo "$HOME/.roswell/bin" >> $GITHUB_PATH
         echo "$HOME/.roswell/lisp/quicklisp/bin" >> $GITHUB_PATH
         echo "$HOME/.roswell/bin"
+        echo "ENV $GITHUB_ENV"
+        echo "PATH $GITHUB_PATH"
+        cat $GITHUB_ENV
+        cat $GITHUB_PATH
 
     # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
@@ -122,14 +126,15 @@ jobs:
     - name: print version/configuration info
       continue-on-error: true
       run: |
+        echo "PATH=$PATH"
         echo "MSYSCON=$MSYSCON"
         echo "LOCALAPPDATA=$LOCALAPPDATA"
         ls $LOCALAPPDATA/config/common-lisp/source-registry.conf.d
         echo "HOME=$HOME"
-        ls $HOME/.config/common-lisp/source-registry.conf.d
+        ls $HOME/.config/common-lisp/source-registry.conf.d  || true
         echo conf
-        cat $LOCALAPPDATA/config/common-lisp/source-registry.conf.d/ci.conf
-        cat $HOME/.config/common-lisp/source-registry.conf.d/ci.conf
+        cat $LOCALAPPDATA/config/common-lisp/source-registry.conf.d/ci.conf  || true
+        #cat $HOME/.config/common-lisp/source-registry.conf.d/ci.conf  || true
         echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
         echo `echo $GITHUB_WORKSPACE | sed -e 's/\\\\/\//g'`
         ros -e '(format t "~a:~a on ~a~%...~%~%" (lisp-implementation-type) (lisp-implementation-version) (machine-type))'
