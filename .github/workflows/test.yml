@@ -97,7 +97,7 @@ jobs:
       with:
         repository: slyrus/opticl
         ref: 0eba652a06a6c022f0283c6db2833dd23cb62190
-        path: ~/lisp/skippy
+        path: ~/lisp/opticl
 
     - name: cache .roswell
       id: cache-dot-roswell
@@ -142,13 +142,13 @@ jobs:
         
     - name: load code from clean fasl cache and run tests
       run: |
-        run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
+        ros exec run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
 
     - name: load code from fasls and run tests
       run: |
-        run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
+        ros exec run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
 
     - name: test read times
       run: |
         curl http://3bb.cc/tmp/fft.png -o fft.png
-        run-test-forms -l pngload.test '(or (pngload.test:test-read-times "fft.png" :count 10) t)'
+        ros exec run-test-forms -l pngload.test '(or (pngload.test:test-read-times "fft.png" :count 10) t)'
