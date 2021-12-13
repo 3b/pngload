@@ -71,6 +71,7 @@ jobs:
         git config --global core.autocrlf false
         echo "MSYSCON=defterm" >> $GITHUB_ENV
         echo "$HOME/.roswell/bin" >> $GITHUB_PATH
+        echo "$HOME/.roswell/bin"
 
     # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
@@ -90,6 +91,13 @@ jobs:
       with:
         repository: 3b/skippy
         path: ~/lisp/skippy
+
+    - name: older opticl
+      uses: actions/checkout@v2
+      with:
+        repository: slyrus/opticl
+        ref 0eba652a06a6c022f0283c6db2833dd23cb62109
+        path: ~/lisp/opticl
 
     - name: cache .roswell
       id: cache-dot-roswell
@@ -111,7 +119,6 @@ jobs:
     - name: print version/configuration info
       continue-on-error: true
       run: |
-        echo "/usr/local/bin" >> $GITHUB_PATH
         ros -e '(format t "~a:~a on ~a~%...~%~%" (lisp-implementation-type) (lisp-implementation-version) (machine-type))'
         ros -e '(format t " fixnum bits:~a~%" (integer-length most-positive-fixnum))'
         ros -e "(ql:quickload 'trivial-features)" -e '(format t "features = ~s~%" *features*)'
@@ -120,14 +127,13 @@ jobs:
 
     - name: update ql dist if we have one cached
       run: |
-        echo "/usr/local/bin" >> $GITHUB_PATH
         ros -e "(ql:update-all-dists :prompt nil)"
 
     - name: install ci-utils
       run: |
-        echo "/usr/local/bin" >> $GITHUB_PATH
         ros install ci-utils
         echo "$HOME/.roswell/bin" >> $GITHUB_PATH
+        echo "$HOME/.roswell/bin"
 
     - name: clear fasl cache
       run: |
