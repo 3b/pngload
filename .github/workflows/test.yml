@@ -69,14 +69,14 @@ jobs:
       shell: pwsh
       run: |
         git config --global core.autocrlf false
-        echo "MSYSCON=defterm" >> $GITHUB_ENV
-        echo "$HOME/.roswell/bin" >> $GITHUB_PATH
-        echo "$HOME/.roswell/lisp/quicklisp/bin" >> $GITHUB_PATH
+        echo "MSYSCON=defterm" | Out-File -FilePath $env:GITHUB_ENV -Append
+        echo "$HOME/.roswell/bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+        echo "$HOME/.roswell/lisp/quicklisp/bin" | Out-File -FilePath $env:GITHUB_PATH -Append
         echo "$HOME/.roswell/bin"
-        echo "ENV $GITHUB_ENV"
-        echo "PATH $GITHUB_PATH"
-        cat $GITHUB_ENV
-        cat $GITHUB_PATH
+        echo "ENV $Env:GITHUB_ENV"
+        echo "PATH $Env:GITHUB_PATH"
+        cat $Env:GITHUB_ENV
+        cat $Env:GITHUB_PATH
 
     # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
