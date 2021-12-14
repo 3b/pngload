@@ -106,8 +106,10 @@ jobs:
     - name: older opticl
       uses: actions/checkout@v2
       with:
-        repository: slyrus/opticl
-        ref: 0eba652a06a6c022f0283c6db2833dd23cb62190
+        #repository: slyrus/opticl
+        #ref: 0eba652a06a6c022f0283c6db2833dd23cb62190
+        repository: tdrhq/opticl
+        ref: a33e3411d28ebff4b29a59a3619884c0f54ff586
         path: ~/lisp/opticl
 
     - name: cache .roswell
