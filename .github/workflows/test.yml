@@ -259,7 +259,7 @@ jobs:
         find . -name sbcl.exe
         echo ls
         ls -lr $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/
-        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load ~/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi)"
+        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load $USERPROFILE/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi)"
 
 
     - name: clear fasl cache5
@@ -272,7 +272,7 @@ jobs:
     - name: load code from clean fasl cache and run tests5
       continue-on-error: true
       run: |
-        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load ~/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi)"
+        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load $USERPROFILE/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi)"
 
 
 
