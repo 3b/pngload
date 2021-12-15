@@ -122,20 +122,45 @@ jobs:
         echo "$HOME/.roswell/bin" >> $GITHUB_PATH
         echo "$HOME/.roswell/bin"
 
-    - name: clear fasl cache
+    - name: clear fasl cache1
       run: |
         rm -rf ~/.cache/common-lisp/
         mkdir -p ~/.cache/common-lisp/
         
-    - name: load code from clean fasl cache and run tests
+    - name: load code from clean fasl cache and run tests1
+      continue-on-error: true
       run: |
         run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
 
-    - name: load code from fasls and run tests
+    - name: clear fasl cache2
+      run: |
+        rm -rf ~/.cache/common-lisp/
+        mkdir -p ~/.cache/common-lisp/
+        
+    - name: load code from clean fasl cache and run tests2
+      continue-on-error: true
       run: |
         run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
 
-    - name: test read times
+    - name: clear fasl cache3
       run: |
-        curl http://3bb.cc/tmp/fft.png -o fft.png
-        run-test-forms -l pngload.test '(or (pngload.test:test-read-times "fft.png" :count 10) t)'
+        rm -rf ~/.cache/common-lisp/
+        mkdir -p ~/.cache/common-lisp/
+        
+    - name: load code from clean fasl cache and run tests3
+      continue-on-error: true
+      run: |
+        run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
+
+
+    - name: clear fasl cache4
+      run: |
+        rm -rf ~/.cache/common-lisp/
+        mkdir -p ~/.cache/common-lisp/
+        
+    - name: load code from clean fasl cache and run tests4
+      continue-on-error: true
+      run: |
+        find ~ -name setup.lisp
+        ~/.roswell/impls/x86-64/windows/sbcl/2.1.11/sbcl --load ~/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'pngload.test)"
+
