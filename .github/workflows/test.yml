@@ -144,7 +144,7 @@ jobs:
     - name: load code from clean fasl cache and run tests2
       continue-on-error: true
       run: |
-        run-test-forms -l cffi '()'
+        run-test-forms -l cffi 't'
 
     - name: clear fasl cache3
       run: |
@@ -156,7 +156,7 @@ jobs:
     - name: load code from clean fasl cache and run tests3
       continue-on-error: true
       run: |
-        run-test-forms -l cffi '()'
+        run-test-forms -l cffi 't'
 
     - name: clear fasl cache3
       run: |
@@ -168,8 +168,7 @@ jobs:
     - name: load code from clean fasl cache and run tests3
       continue-on-error: true
       run: |
-        run-test-forms -l babel '()'
-        run-test-forms -l cffi '()'
+        run-test-forms -l cffi 't'
 
     - name: clear fasl cache3
       run: |
@@ -181,8 +180,8 @@ jobs:
     - name: load code from clean fasl cache and run tests3
       continue-on-error: true
       run: |
-        run-test-forms -l babel '()'
-        run-test-forms -l cffi '()'
+        run-test-forms -l babel 't'
+        run-test-forms -l cffi 't'
 
 
     - name: clear fasl cache4
@@ -208,5 +207,8 @@ jobs:
         find ~/ -name sbcl.exe
         find $HOME -name sbcl.exe
         find $USERPROFILE -name sbcl.exe
+        find . -name sbcl.exe
+        echo ls
+        ls -lr $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/
         $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/sbcl --load ~/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'pngload.test)"
 
