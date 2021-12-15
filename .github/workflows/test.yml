@@ -124,6 +124,7 @@ jobs:
 
     - name: clear fasl cache1
       run: |
+        rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
         rm -rf ~/AppData/Local/cache/common-lisp/ || true
         rm -rf ~/.cache/common-lisp/ || true
         mkdir -p ~/.cache/common-lisp/
@@ -135,6 +136,7 @@ jobs:
 
     - name: clear fasl cache2
       run: |
+        rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
         rm -rf ~/AppData/Local/cache/common-lisp/ || true
         rm -rf ~/.cache/common-lisp/
         mkdir -p ~/.cache/common-lisp/
@@ -147,6 +149,7 @@ jobs:
     - name: clear fasl cache3
       run: |
         rm -rf ~/AppData/Local/cache/common-lisp/ || true
+        rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
         rm -rf ~/.cache/common-lisp/
         mkdir -p ~/.cache/common-lisp/
         
@@ -162,7 +165,9 @@ jobs:
         ls ~/ || true
         echo "HOME ($HOME) "
         ls $HOME/ || true
-        rm -rf ~/AppData/Local/cache/common-lisp/ || true
+        echo "USERPROFILE ($USERPROFILE) "
+        ls $USERPROFILE/ || true
+        rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
         rm -rf ~/.cache/common-lisp/
         mkdir -p ~/.cache/common-lisp/
         
@@ -176,5 +181,5 @@ jobs:
         which sbcl
         find ~/ -name sbcl.exe
         find $HOME -name sbcl.exe
-        ~/.roswell/impls/x86-64/windows/sbcl/2.1.11/sbcl --load ~/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'pngload.test)"
+        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/sbcl --load ~/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'pngload.test)"
 
