@@ -144,7 +144,7 @@ jobs:
     - name: load code from clean fasl cache and run tests2
       continue-on-error: true
       run: |
-        run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
+        run-test-forms -l cffi '()'
 
     - name: clear fasl cache3
       run: |
@@ -156,7 +156,33 @@ jobs:
     - name: load code from clean fasl cache and run tests3
       continue-on-error: true
       run: |
-        run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
+        run-test-forms -l cffi '()'
+
+    - name: clear fasl cache3
+      run: |
+        rm -rf ~/AppData/Local/cache/common-lisp/ || true
+        rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
+        rm -rf ~/.cache/common-lisp/
+        mkdir -p ~/.cache/common-lisp/
+        
+    - name: load code from clean fasl cache and run tests3
+      continue-on-error: true
+      run: |
+        run-test-forms -l babel '()'
+        run-test-forms -l cffi '()'
+
+    - name: clear fasl cache3
+      run: |
+        rm -rf ~/AppData/Local/cache/common-lisp/ || true
+        rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
+        rm -rf ~/.cache/common-lisp/
+        mkdir -p ~/.cache/common-lisp/
+        
+    - name: load code from clean fasl cache and run tests3
+      continue-on-error: true
+      run: |
+        run-test-forms -l babel '()'
+        run-test-forms -l cffi '()'
 
 
     - name: clear fasl cache4
@@ -181,5 +207,6 @@ jobs:
         which sbcl
         find ~/ -name sbcl.exe
         find $HOME -name sbcl.exe
+        find $USERPROFILE -name sbcl.exe
         $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/sbcl --load ~/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'pngload.test)"
 
