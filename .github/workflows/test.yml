@@ -259,7 +259,7 @@ jobs:
         find . -name sbcl.exe
         echo ls
         ls -lr $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/
-        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load /c/users/runneradmin/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi)"
+        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load /c/users/runneradmin/.roswell/lisp/quicklisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi)"
 
 
     - name: clear fasl cache5
@@ -273,31 +273,31 @@ jobs:
       continue-on-error: true
       run: |
         rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
-        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load /c/users/runneradmin/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi")
+        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load /c/users/runneradmin/.roswell/lisp/quicklisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi")
 
     - name: test6
       continue-on-error: true
       run: |
         rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
-        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load /c/users/runneradmin/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi")
+        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load /c/users/runneradmin/.roswell/lisp/quicklisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi")
 
     - name: test6
       continue-on-error: true
       run: |
         rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
-        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load /c/users/runneradmin/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi")
+        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load /c/users/runneradmin/.roswell/lisp/quicklisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi")
 
     - name: test6
       continue-on-error: true
       run: |
         rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
-        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load /c/users/runneradmin/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi")
+        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load /c/users/runneradmin/.roswell/lisp/quicklisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi")
 
     - name: test6
       continue-on-error: true
       run: |
         rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
-        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load /c/users/runneradmin/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi")
+        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load /c/users/runneradmin/.roswell/lisp/quicklisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi")
 
 
 
