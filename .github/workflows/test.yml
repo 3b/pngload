@@ -180,6 +180,30 @@ jobs:
     - name: load code from clean fasl cache and run tests3
       continue-on-error: true
       run: |
+        run-test-forms -l cffi 't'
+
+    - name: clear fasl cache3
+      run: |
+        rm -rf ~/AppData/Local/cache/common-lisp/ || true
+        rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
+        rm -rf ~/.cache/common-lisp/
+        mkdir -p ~/.cache/common-lisp/
+        
+    - name: load code from clean fasl cache and run tests3
+      continue-on-error: true
+      run: |
+        run-test-forms -l cffi 't'
+
+    - name: clear fasl cache3
+      run: |
+        rm -rf ~/AppData/Local/cache/common-lisp/ || true
+        rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
+        rm -rf ~/.cache/common-lisp/
+        mkdir -p ~/.cache/common-lisp/
+        
+    - name: load code from clean fasl cache and run tests3
+      continue-on-error: true
+      run: |
         run-test-forms -l babel 't'
         run-test-forms -l cffi 't'
 
@@ -203,12 +227,27 @@ jobs:
         find ~/ -name setup.lisp
         find $HOME/ -name setup.lisp
         echo find sbcl
-        which sbcl
         find ~/ -name sbcl.exe
         find $HOME -name sbcl.exe
         find $USERPROFILE -name sbcl.exe
         find . -name sbcl.exe
         echo ls
         ls -lr $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/
-        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/sbcl --load ~/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'pngload.test)"
+        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load ~/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi)"
+
+
+    - name: clear fasl cache5
+      run: |
+        rm -rf ~/AppData/Local/cache/common-lisp/ || true
+        rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
+        rm -rf ~/.cache/common-lisp/
+        mkdir -p ~/.cache/common-lisp/
+
+    - name: load code from clean fasl cache and run tests5
+      continue-on-error: true
+      run: |
+        $USERPROFILE/.roswell/impls/x86-64/windows/sbcl/2.1.11/bin/sbcl --load ~/.roswell/lisp/quicklisp/setup.lisp --eval "(ql:quickload 'cffi)"
+
+
+
 
