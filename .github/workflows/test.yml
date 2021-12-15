@@ -10,43 +10,8 @@ jobs:
     strategy:
       matrix:
         # sbcl32 and clisp32 don't work, clasp won't build on CI servers
-        lisp: [sbcl-bin,sbcl,ccl-bin/1.12,ccl32,ecl,clisp,allegro,cmucl,abcl]
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        exclude:
-          # some implementations don't install/build properly on windows
-            - os: windows-latest
-              lisp: allegro
-            - os: windows-latest
-              lisp: cmucl
-            - os: windows-latest
-              lisp: abcl
-            - os: windows-latest
-              lisp: ecl
-            - os: windows-latest
-              lisp: clisp
-          # CFFI requires CLISP compiled with dynamic FFI support.
-            - os: macos-latest
-              lisp: clisp
-          # sbcl-bin is too old on macos
-            - os: macos-latest
-              lisp: sbcl-bin
-          # skip 32bit lisps on osx
-            - os: macos-latest
-              lisp: sbcl32
-            - os: macos-latest
-              lisp: ccl32
-            - os: macos-latest
-              lisp: clisp32
-            - os: macos-latest
-              lisp: allegro
-            - os: macos-latest
-              lisp: cmucl
-          # clisp doesn't build with current readline, do disable on linux too for now
-            - os: ubuntu-latest
-              lisp: clisp
-          # roswell can't install ccl 1.12.1 on windows, so skip ccl32 there
-            - os: windows-latest
-              lisp: ccl32
+        lisp: [sbcl-bin,sbcl]
+        os: [windows-latest]
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -103,13 +68,10 @@ jobs:
         repository: 3b/skippy
         path: ~/lisp/skippy
 
-    - name: older opticl
+    - name: opticl from git
       uses: actions/checkout@v2
       with:
-        #repository: slyrus/opticl
-        #ref: 0eba652a06a6c022f0283c6db2833dd23cb62190
-        repository: tdrhq/opticl
-        ref: a33e3411d28ebff4b29a59a3619884c0f54ff586
+        repository: slyrus/opticl
         path: ~/lisp/opticl
 
     - name: cache .roswell
