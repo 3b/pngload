@@ -204,6 +204,31 @@ jobs:
     - name: load code from clean fasl cache and run tests3
       continue-on-error: true
       run: |
+        run-test-forms -l cffi 't'
+
+    - name: clear fasl cache3
+      run: |
+        rm -rf ~/AppData/Local/cache/common-lisp/ || true
+        rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
+        rm -rf ~/.cache/common-lisp/
+        mkdir -p ~/.cache/common-lisp/
+        
+    - name: load code from clean fasl cache and run tests3
+      continue-on-error: true
+      run: |
+        run-test-forms -l babel 't'
+        run-test-forms -l cffi 't'
+
+    - name: clear fasl cache3
+      run: |
+        rm -rf ~/AppData/Local/cache/common-lisp/ || true
+        rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/ || true
+        rm -rf ~/.cache/common-lisp/
+        mkdir -p ~/.cache/common-lisp/
+        
+    - name: load code from clean fasl cache and run tests3
+      continue-on-error: true
+      run: |
         run-test-forms -l babel 't'
         run-test-forms -l cffi 't'
 
@@ -226,6 +251,7 @@ jobs:
         echo find setup
         find ~/ -name setup.lisp
         find $HOME/ -name setup.lisp
+        find $USERPROFILE/ -name setup.lisp
         echo find sbcl
         find ~/ -name sbcl.exe
         find $HOME -name sbcl.exe
