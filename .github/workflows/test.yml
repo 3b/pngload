@@ -205,6 +205,6 @@ jobs:
       # miss failures in the real tests
       run: |
         EXPECT=1 run_tests -l pngload.test NIL
-        EXPECT=2 run-tests -l "system that does not exist"
+        EXPECT=2 run_tests -l "system that does not exist"
         PASS=123 EXPECT=123 run_tests t
 
