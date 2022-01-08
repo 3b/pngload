@@ -166,7 +166,7 @@ jobs:
           echo "$RUN $*"
           # run in a subshell to minimize scope of +e
           ( set +e
-            $RUN -r $PASS $@
+            $RUN -r $PASS "$@"
             local RET=$?
             set -e
             if [ $RET -eq $EXPECT ]
