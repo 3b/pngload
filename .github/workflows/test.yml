@@ -203,6 +203,7 @@ jobs:
     - name: smoke test
       # make sure test failures are caught as expected so we don't
       # miss failures in the real tests
-      EXPECT=1 run_tests -l pngload.test NIL
-      EXPECT=2 run-tests -l "system that does not exist"
+      run: |
+        EXPECT=1 run_tests -l pngload.test NIL
+        EXPECT=2 run-tests -l "system that does not exist"
 
