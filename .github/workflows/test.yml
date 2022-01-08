@@ -198,7 +198,7 @@ jobs:
     - name: test read times
       run: |
         curl http://3bb.cc/tmp/fft.png -o fft.png
-        run_tests -l pngload.test '(or (pngload.test:test-read-times "fft.png" :count 10) t)
+        run_tests -l pngload.test '(or (pngload.test:test-read-times "fft.png" :count 10) t)'
 
     - name: smoke test
       # make sure test failures are caught as expected so we don't
@@ -206,4 +206,5 @@ jobs:
       run: |
         EXPECT=1 run_tests -l pngload.test NIL
         EXPECT=2 run-tests -l "system that does not exist"
+        PASS=123 EXPECT=123 run_tests t
 
