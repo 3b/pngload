@@ -208,4 +208,5 @@ jobs:
         EXPECT=2 run_tests -l pngload.test "(cl:error)"
         EXPECT=3 run_tests -l "system that does not exist"
         PASS=123 EXPECT=123 run_tests t
+        PASS=123 EXPECT=1 run_tests nil
 
