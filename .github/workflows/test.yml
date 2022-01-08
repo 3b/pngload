@@ -49,14 +49,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        # specify default shell explicitly to get msys instead of git-bash on windows
-        shell: ${{ fromJSON('[ "bash", "msys2 {0}" ]') [ matrix.os == 'windows-latest' ] }}
+        # specify default shell explicitly to get msys instead of git-bash
+        # on windows, and to get a login shell elsewher so we can use
+        # .bash_profile
+        shell: ${{ fromJSON('[ "bash -leo pipefail", "msys2" ]') [ matrix.os == 'windows-latest' ] }} "{0}"
 
     steps:
     - uses: msys2/setup-msys2@v2
       if: matrix.os == 'windows-latest'
       with:
-        path-type: inherit
+        path-type: minimal
         msystem: MINGW64
         # set these to true if we want to install things from pacman
         release: true
@@ -64,32 +66,43 @@ jobs:
         # list all packages we want installed if using release&update true
         install: 'git base-devel unzip mingw-w64-x86_64-gcc mingw64/mingw-w64-x86_64-zlib'
 
+
     - name: windows specific settings
       if: matrix.os == 'windows-latest'
+      # run with powershell so it sets the git config used by actions/checkout
       shell: pwsh
       run: |
         git config --global core.autocrlf false
-        echo "MSYSCON=defterm" >> $GITHUB_ENV
-        echo "$HOME/.roswell/bin" >> $GITHUB_PATH
+        git config --global core.eol lf
+        # make sure MSYSCON is set so roswell doesn't try to install msys
+        echo "MSYSCON=defterm" | Out-File -FilePath $env:GITHUB_ENV -Append
+        # roswell installs to windows profile dir, so add to PATH using
+        # pwsh $HOME also
+        echo "$HOME/.roswell/bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+        # not sure what makes roswell install things here
+        echo "$HOME/.roswell/lisp/quicklisp/bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+        echo home = $HOME
+        echo userprofile = $USERPROFILE
 
-    # Check out your repository under $GITHUB_WORKSPACE, so your job can access it
+
     - uses: actions/checkout@v2
-
-    # check out extra repos if not in QL, or version in ql is too old
-    - run: mkdir -p ~/lisp/
+      # check out into subdir so we can pull other projects next to it.
+      # roswell CI script sets up current dir as asdf search tree
+      with:
+        path: pngload
 
     - name: ci-utils fork
       uses: actions/checkout@v2
       with:
         repository: 3b/ci-utils
         ref: test2
-        path: ~/lisp/ci-utils
+        path: ci-utils
 
     - name: skippy fork
       uses: actions/checkout@v2
       with:
         repository: 3b/skippy
-        path: ~/lisp/skippy
+        path: skippy
 
     - name: cache .roswell
       id: cache-dot-roswell
@@ -102,47 +115,96 @@ jobs:
           ${{ runner.os }}-dot-roswell-
 
     - name: install roswell
-      continue-on-error: true
-      # always run install, since it does some global installs and setup that isn't cached
+      # always run install, since it does some global installs and setup
+      # that isn't cached
       env:
        LISP: ${{ matrix.lisp }}
       run: curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh -x
-        
+
     - name: print version/configuration info
       continue-on-error: true
       run: |
-        echo "/usr/local/bin" >> $GITHUB_PATH
+        set -x
         ros -e '(format t "~a:~a on ~a~%...~%~%" (lisp-implementation-type) (lisp-implementation-version) (machine-type))'
         ros -e '(format t " fixnum bits:~a~%" (integer-length most-positive-fixnum))'
         ros -e "(ql:quickload 'trivial-features)" -e '(format t "features = ~s~%" *features*)'
+        uname -a
         which gcc
         gcc --version
 
     - name: update ql dist if we have one cached
       run: |
-        echo "/usr/local/bin" >> $GITHUB_PATH
         ros -e "(ql:update-all-dists :prompt nil)"
 
     - name: install ci-utils
       run: |
-        echo "/usr/local/bin" >> $GITHUB_PATH
         ros install ci-utils
         echo "$HOME/.roswell/bin" >> $GITHUB_PATH
+        echo "$HOME/.roswell/bin"
+        # we specified a login shell above, so use bash_profile to define
+        # a test wrapper function for tests below
+        cat <<"EOF" > ~/.bash_profile
+        echo "loading functions"
+        if [ -z $MSYSCON ] ; then
+           CI_UTILS=$GITHUB_WORKSPACE/ci-utils
+        else
+           CI_UTILS=$(cygpath $GITHUB_WORKSPACE)/ci-utils
+        fi
+        RUN=$CI_UTILS/roswell/run-test-forms.ros
+        # arbitrary exit code we tell lisp code to use to signal success
+        PASS=33
+        # value we expect on "successful" run of a test, usually $PASS
+        # unless the test isn't expected to return normally from the
+        # lisp code
+        EXPECT=$PASS
+        run_tests () {
+          # passes arguments to run-test-forms, so use like
+          # run_tests -l system (form)
+          echo "$RUN $*"
+          # run in a subshell to minimize scope of +e
+          ( set +e
+            $RUN -r $PASS "$@"
+            local RET=$?
+            set -e
+            if [ $RET -eq $EXPECT ]
+            then
+              echo -e "\033[0;32mGot $RET, expected $EXPECT: OK\033[0m"
+              true
+            else
+              echo -e "\033[0;31mGot $RET, expected $EXPECT: BAD $fail\033[0m"
+              false
+            fi
+          )
+        }
+        EOF
+
 
     - name: clear fasl cache
       run: |
-        rm -rf ~/.cache/common-lisp/
+        [ -d "$USERPROFILE/AppData/Local/cache/common-lisp/" ] && rm -rf $USERPROFILE/AppData/Local/cache/common-lisp/
+        [ -d "~/.cache/common-lisp/" ] && rm -rf ~/.cache/common-lisp/
         mkdir -p ~/.cache/common-lisp/
-        
+
     - name: load code from clean fasl cache and run tests
       run: |
-        run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
+        run_tests -l pngload.test '(pngload.test:run-tests-for-ci)'
 
     - name: load code from fasls and run tests
       run: |
-        run-test-forms -l pngload.test '(pngload.test:run-tests-for-ci)'
+        run_tests -l pngload.test '(pngload.test:run-tests-for-ci)'
 
     - name: test read times
       run: |
         curl http://3bb.cc/tmp/fft.png -o fft.png
-        run-test-forms -l pngload.test '(or (pngload.test:test-read-times "fft.png" :count 10) t)'
+        run_tests -l pngload.test '(or (pngload.test:test-read-times "fft.png" :count 10) t)'
+
+    - name: smoke test
+      # make sure test failures are caught as expected so we don't
+      # miss failures in the real tests
+      run: |
+        EXPECT=1 run_tests -l pngload.test NIL
+        EXPECT=2 run_tests -l pngload.test "(cl:error)"
+        EXPECT=3 run_tests -l "system that does not exist"
+        PASS=123 EXPECT=123 run_tests t
+        PASS=123 EXPECT=1 run_tests nil
+
