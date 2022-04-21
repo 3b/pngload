@@ -3,7 +3,7 @@
   :author ("Michael Fiano <mail@mfiano.net>"
            "Bart Botta <00003b@gmail.com>")
   :license "MIT"
-  :homepage "https://github.com/mfiano/pngload"
+  :homepage "https://github.com/bufferswap/pngload"
   :version "0.1.0"
   :encoding :utf-8
   :depends-on (#:3bz
