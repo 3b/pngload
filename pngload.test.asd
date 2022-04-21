@@ -5,12 +5,13 @@
   :license "MIT"
   :homepage "https://github.com/bufferswap/pngload"
   :encoding :utf-8
-  :depends-on (#:alexandria
-               #:local-time
-               #:opticl
-               #:png-read
-               #:pngload
-               #:uiop)
+  :depends-on
+  (#:alexandria
+   #:local-time
+   #:opticl
+   #:png-read
+   #:pngload
+   #:uiop)
   :pathname "src"
   :serial t
   :components

@@ -6,15 +6,16 @@
   :homepage "https://github.com/bufferswap/pngload"
   :version "0.1.0"
   :encoding :utf-8
-  :depends-on (#:3bz
-               #:alexandria
-               (:feature (:and (:not :mezzano) (:not :abcl)) #:cffi)
-               (:feature (:and (:not :mezzano) (:not :abcl)) #:mmap)
-               #:parse-float
-               (:feature (:and (:not :clisp) (:not :abcl)) #:static-vectors)
-               #:swap-bytes
-               #:uiop
-               #:zpb-exif)
+  :depends-on
+  (#:3bz
+   #:alexandria
+   (:feature (:and (:not :mezzano) (:not :abcl)) #:cffi)
+   (:feature (:and (:not :mezzano) (:not :abcl)) #:mmap)
+   #:parse-float
+   (:feature (:and (:not :clisp) (:not :abcl)) #:static-vectors)
+   #:swap-bytes
+   #:uiop
+   #:zpb-exif)
   :pathname "src"
   :serial t
   :components
