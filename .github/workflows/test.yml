@@ -198,7 +198,7 @@ jobs:
 
     - name: test read times
       run: |
-        curl http://3bb.cc/tmp/fft.png -o fft.png
+        curl https://3bb.cc/tmp/fft.png -o fft.png
         run_tests -l pngload.test '(or (pngload.test:test-read-times "fft.png" :count 10) t)'
 
     - name: smoke test
