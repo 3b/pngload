@@ -88,28 +88,28 @@ jobs:
         echo userprofile = $USERPROFILE
 
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       # check out into subdir so we can pull other projects next to it.
       # roswell CI script sets up current dir as asdf search tree
       with:
         path: pngload
 
     - name: ci-utils fork
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: 3b/ci-utils
         ref: test2
         path: ci-utils
 
     - name: skippy fork
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: 3b/skippy
         path: skippy
 
     - name: cache .roswell
       id: cache-dot-roswell
-      uses: actions/cache@v1
+      uses: actions/cache@v4
       with:
         path: ~/.roswell
         key: ${{ runner.os }}-dot-roswell-${{ matrix.lisp }}-${{ hashFiles('**/*.asd') }}
