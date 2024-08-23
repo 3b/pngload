@@ -33,6 +33,4 @@
    (:file "decode")
    (:file "metadata")
    (:file "png")
-   (:file "octet-vector")
-   (:file "png-nommap" :if-feature (:or :mezzano :abcl))
-   (:file "png-mmap" :if-feature (:and (:not :mezzano) (:not :abcl)))))
+   (:file "octet-vector")))
